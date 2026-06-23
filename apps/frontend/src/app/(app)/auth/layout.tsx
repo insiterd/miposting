@@ -28,7 +28,7 @@ export default async function AuthLayout({
           Over <span className="text-[42px] text-[#FC69FF]">20,000+</span>{' '}
           Entrepreneurs use
           <br />
-          Postiz To Grow Their Social Presence
+          miposting To Grow Your Social Presence
         </div>
         <TestimonialComponent />
       </div>

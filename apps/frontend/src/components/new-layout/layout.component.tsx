@@ -113,6 +113,10 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                         <div className="flex flex-col h-full gap-[32px] flex-1 py-[12px]">
                           <Logo />
                           <TopMenu />
+                          <div className="mt-auto text-center text-[9px] text-gray-500 leading-tight">
+                            Powered by Postiz (AGPLv3)<br />
+                            <a href="https://github.com/tu-usuario/postiz-app" target="_blank" className="underline">Source</a>
+                          </div>
                         </div>
                       </div>
                     </div>

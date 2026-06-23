@@ -32,7 +32,7 @@ export const Onboarding: FC = () => {
     }
     modalOpen.current = true;
     modal.openModal({
-      // title: t('onboarding', 'Welcome to Postiz'),
+      // title: t('onboarding', 'Welcome to miposting'),
       withCloseButton: true,
       closeOnEscape: false,
       removeLayout: true,
