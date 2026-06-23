@@ -206,9 +206,9 @@ const PriceBreakdown: FC = () => {
 
   // Get values
   const planName = lineItem?.name || t('billing_subscription', 'Subscription');
-  const unitAmount = lineItem?.unitAmount?.amount || '$0.00';
+  const unitAmount = lineItem?.unitAmount?.amount || 'RD$0';
   const discountDisplay = hasDiscount ? discountAmounts[0] : null;
-  const dueToday = checkout?.total?.total?.amount || '$0.00';
+  const dueToday = checkout?.total?.total?.amount || 'RD$0';
   const nextBillingTotal = recurring?.dueNext?.total?.amount;
   const nextBillingDate = recurring?.trial?.trialEnd
     ? dayjs(recurring.trial.trialEnd * 1000).format('MMMM D, YYYY')
@@ -327,7 +327,7 @@ const AppliedCouponDisplay: FC<{
       typeof recurringDiscount === 'number' &&
       recurringDiscount > 0
     ) {
-      return `-$${(recurringDiscount / 100).toFixed(2)}`;
+      return `-RD$${(recurringDiscount / 100).toFixed(2)}`;
     }
 
     // Try lineItems discount

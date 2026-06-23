@@ -71,7 +71,7 @@ export const Prorate: FC<{
   }
   return (
     <div className="text-[12px] flex pt-[12px]">
-      ({t('pay_today', 'Pay Today')} ${(price < 0 ? 0 : price)?.toFixed(1)})
+      ({t('pay_today', 'Pay Today')} RD${(price < 0 ? 0 : price)?.toFixed(1)})
     </div>
   );
 };
@@ -462,7 +462,7 @@ export const MainBillingComponent: FC<{
               <div className="text-[18px]">{name}</div>
               <div className="text-[38px] flex gap-[2px] items-center">
                 <div>
-                  $
+                  RD$
                   {monthlyOrYearly === 'on'
                     ? values.year_price
                     : values.month_price}

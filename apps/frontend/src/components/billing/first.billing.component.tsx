@@ -271,7 +271,7 @@ export const FirstBillingComponent = () => {
                     </div>
                     <div className="text-[24px] mobile:text-[18px] font-[400]">
                       <span className="text-[44px] mobile:text-[30px] font-[600]">
-                        $
+                        RD$
                         {
                           value[
                             period === 'MONTHLY' ? 'month_price' : 'year_price'

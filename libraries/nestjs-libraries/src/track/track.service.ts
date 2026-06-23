@@ -56,7 +56,7 @@ export class TrackService {
     let customData = null;
     if (additional?.value) {
       customData = new CustomData();
-      customData.setValue(additional.value).setCurrency('USD');
+      customData.setValue(additional.value).setCurrency('DOP');
     }
 
     const serverEvent = new ServerEvent()
