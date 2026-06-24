@@ -22,29 +22,33 @@ export default function Header() {
       }`}
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="relative flex h-14 items-center justify-center gap-6 rounded-2xl bg-white/90 px-6 shadow-lg shadow-black/[0.03] backdrop-blur-xs before:pointer-events-none before:absolute before:inset-0 before:z-[-1] before:rounded-[inherit] before:border before:border-transparent before:[background:linear-gradient(var(--color-gray-100),var(--color-gray-200))_border-box] before:[mask-composite:exclude_!important] before:[mask:linear-gradient(white_0_0)_padding-box,_linear-gradient(white_0_0)]">
-          <Logo />
+        <div className="relative flex h-14 items-center justify-between rounded-2xl bg-white/90 px-6 shadow-lg shadow-black/[0.03] backdrop-blur-xs before:pointer-events-none before:absolute before:inset-0 before:z-[-1] before:rounded-[inherit] before:border before:border-transparent before:[background:linear-gradient(var(--color-gray-100),var(--color-gray-200))_border-box] before:[mask-composite:exclude_!important] before:[mask:linear-gradient(white_0_0)_padding-box,_linear-gradient(white_0_0)]">
+          <div className="flex items-center">
+            <Logo />
+          </div>
 
-          <Link
-            href="#features"
-            className="text-sm font-medium text-gray-600 transition hover:text-gray-900"
-          >
-            Funcionalidades
-          </Link>
-          <Link
-            href="/pricing"
-            className="text-sm font-medium text-gray-600 transition hover:text-gray-900"
-          >
-            Precios
-          </Link>
-          <Link
-            href="#faq"
-            className="text-sm font-medium text-gray-600 transition hover:text-gray-900"
-          >
-            FAQ
-          </Link>
+          <div className="flex items-center gap-8">
+            <Link
+              href="#features"
+              className="text-sm font-medium text-gray-600 transition hover:text-gray-900"
+            >
+              Funcionalidades
+            </Link>
+            <Link
+              href="/pricing"
+              className="text-sm font-medium text-gray-600 transition hover:text-gray-900"
+            >
+              Precios
+            </Link>
+            <Link
+              href="#faq"
+              className="text-sm font-medium text-gray-600 transition hover:text-gray-900"
+            >
+              FAQ
+            </Link>
+          </div>
 
-          <div className="ml-2 flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <Link
               href="https://insiterd.miposting.com/login"
               className="btn-sm bg-white text-gray-800 shadow-sm hover:bg-gray-50"
