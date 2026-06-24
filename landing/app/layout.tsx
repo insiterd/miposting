@@ -13,7 +13,8 @@ export const metadata = {
   description:
     "Programa, publica y analiza contenido en 28+ plataformas sociales. La herramienta todo-en-uno para agencias de marketing en República Dominicana.",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/miposting-favi.svg",
+    apple: "/miposting-favi.png",
   },
 };
 
