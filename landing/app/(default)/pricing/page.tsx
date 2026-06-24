@@ -21,7 +21,7 @@ const plans = [
       "Acceso a la API pública",
     ],
     cta: "Probar 7 Días Gratis",
-    href: "https://insiterd.miposting.com/register",
+    href: "https://miposting.insiterd.com/register",
     featured: false,
   },
   {
@@ -39,7 +39,7 @@ const plans = [
       "Publicación automática inteligente",
     ],
     cta: "Probar 7 Días Gratis",
-    href: "https://insiterd.miposting.com/register",
+    href: "https://miposting.insiterd.com/register",
     featured: true,
   },
   {
@@ -57,7 +57,7 @@ const plans = [
       "Soporte prioritario",
     ],
     cta: "Probar 7 Días Gratis",
-    href: "https://insiterd.miposting.com/register",
+    href: "https://miposting.insiterd.com/register",
     featured: false,
   },
 ];

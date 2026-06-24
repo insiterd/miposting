@@ -29,7 +29,7 @@ export default function Header() {
 
           <div className="flex items-center gap-8">
             <Link
-              href="#features"
+              href="/#features"
               className="text-sm font-medium text-gray-600 transition hover:text-gray-900"
             >
               Funcionalidades
@@ -41,7 +41,7 @@ export default function Header() {
               Precios
             </Link>
             <Link
-              href="#faq"
+              href="/#faq"
               className="text-sm font-medium text-gray-600 transition hover:text-gray-900"
             >
               FAQ
@@ -50,13 +50,13 @@ export default function Header() {
 
           <div className="flex items-center gap-3">
             <Link
-              href="https://insiterd.miposting.com/login"
+              href="https://miposting.insiterd.com/login"
               className="btn-sm bg-white text-gray-800 shadow-sm hover:bg-gray-50"
             >
               Iniciar Sesión
             </Link>
             <Link
-              href="https://insiterd.miposting.com/register"
+              href="https://miposting.insiterd.com/register"
               className="btn-sm bg-blue-500 text-gray-200 shadow-sm hover:bg-blue-600"
             >
               Registrarse
