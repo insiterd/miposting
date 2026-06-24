@@ -91,6 +91,20 @@ export default function FeaturesPlanet() {
               </article>
             ))}
           </div>
+
+          <div className="mt-12 text-center" data-aos="zoom-y-out">
+            <a
+              className="btn inline-flex bg-linear-to-t from-blue-600 to-blue-500 bg-[length:100%_100%] bg-[bottom] text-white shadow-sm hover:bg-[length:100%_150%]"
+              href="https://insiterd.miposting.com/register"
+            >
+              <span className="relative inline-flex items-center">
+                Prueba Gratis 7 Días{" "}
+                <span className="ml-1 tracking-normal text-blue-300 transition-transform group-hover:translate-x-0.5">
+                  -&gt;
+                </span>
+              </span>
+            </a>
+          </div>
         </div>
       </div>
     </section>
