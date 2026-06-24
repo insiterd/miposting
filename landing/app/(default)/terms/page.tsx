@@ -246,10 +246,10 @@ export default function Terms() {
               <li>
                 Email de contacto:{" "}
                 <a
-                  href="mailto:info@insiterd.app"
+                  href="mailto:info@insiterd.com"
                   className="text-blue-600 underline hover:text-blue-800"
                 >
-                  info@insiterd.app
+                  info@insiterd.com
                 </a>
               </li>
               <li>

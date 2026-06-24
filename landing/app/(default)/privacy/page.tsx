@@ -196,10 +196,10 @@ export default function Privacy() {
             <p className="mt-3">
               Para ejercer cualquiera de estos derechos, escríbenos a{" "}
               <a
-                href="mailto:info@insiterd.app"
+                href="mailto:info@insiterd.com"
                 className="text-blue-600 underline hover:text-blue-800"
               >
-                info@insiterd.app
+                info@insiterd.com
               </a>
               . Responderemos a tu solicitud en un plazo máximo de 30 días.
             </p>
@@ -307,10 +307,10 @@ export default function Privacy() {
               <li>
                 Email de contacto:{" "}
                 <a
-                  href="mailto:info@insiterd.app"
+                  href="mailto:info@insiterd.com"
                   className="text-blue-600 underline hover:text-blue-800"
                 >
-                  info@insiterd.app
+                  info@insiterd.com
                 </a>
               </li>
               <li>
