@@ -270,14 +270,14 @@ export const FirstBillingComponent = () => {
                       {capitalize(key)}
                     </div>
                     <div className="text-[24px] mobile:text-[18px] font-[400]">
-                      <span className="text-[44px] mobile:text-[30px] font-[600]">
+                                            <span className="text-[32px] mobile:text-[24px] font-[600]">
                         RD$
                         {
                           value[
                             period === 'MONTHLY' ? 'month_price' : 'year_price'
                           ]
                         }
-                      </span>{' '}
+                      </span> {' '}
                       {period === 'MONTHLY'
                         ? t('billing_per_month', '/ month')
                         : t('billing_per_year', '/ year')}
