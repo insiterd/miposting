@@ -26,6 +26,7 @@ export class RedditProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 1; // Reddit has strict rate limits (1 request per second)
   identifier = 'reddit';
   name = 'Reddit';
+  allowedPlans = ['PRO', 'ULTIMATE'];
   isBetweenSteps = false;
   scopes = ['read', 'identity', 'submit', 'flair'];
   editor = 'normal' as const;

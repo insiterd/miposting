@@ -29,6 +29,7 @@ export class FarcasterProvider
 {
   identifier = 'wrapcast';
   name = 'Farcaster';
+  allowedPlans = ['ULTIMATE'];
   isBetweenSteps = false;
   isWeb3 = true;
   scopes = [] as string[];

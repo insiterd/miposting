@@ -139,6 +139,7 @@ export interface SocialProvider
   extends IAuthenticator,
     ISocialMediaIntegration {
   identifier: string;
+  allowedPlans?: string[];
   refreshWait?: boolean;
   convertToJPEG?: boolean;
   stripLinks?: () => boolean;

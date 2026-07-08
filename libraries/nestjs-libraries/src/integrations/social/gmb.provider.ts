@@ -41,6 +41,7 @@ export class GmbProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3;
   identifier = 'gmb';
   name = 'Google My Business';
+  allowedPlans = ['TEAM', 'PRO', 'ULTIMATE'];
   isBetweenSteps = true;
   scopes = [
     'https://www.googleapis.com/auth/userinfo.profile',

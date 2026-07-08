@@ -4,7 +4,7 @@ import { Slider } from '@gitroom/react/form/slider';
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@gitroom/react/form/button';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
-import { Subscription } from '@prisma/client';
+import { Subscription, SubscriptionTier } from '@prisma/client';
 import { useDebouncedCallback } from 'use-debounce';
 import ReactLoading from '@gitroom/frontend/components/layout/loading';
 import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
@@ -31,7 +31,7 @@ import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.comp
 
 export const Prorate: FC<{
   period: 'MONTHLY' | 'YEARLY';
-  pack: 'STANDARD' | 'PRO';
+  pack: string;
 }> = (props) => {
   const { period, pack } = props;
   const t = useT();
@@ -75,12 +75,20 @@ export const Prorate: FC<{
     </div>
   );
 };
+const NetworkBadge: FC<{ name: string }> = ({ name }) => (
+  <span className="inline-flex items-center gap-1 rounded-[4px] bg-[#2a2a3a] px-[8px] py-[2px] text-[12px] text-[#c0c0d0]">
+    {name}
+  </span>
+);
+
 export const Features: FC<{
-  pack: 'FREE' | 'STANDARD' | 'PRO';
+  pack: string;
 }> = (props) => {
   const { pack } = props;
+  const currentPricing = pricing[pack];
+  if (!currentPricing) return null;
+
   const features = useMemo(() => {
-    const currentPricing = pricing[pack];
     const channelsOr = currentPricing.channel;
     const list = [];
     list.push(`${channelsOr} ${channelsOr === 1 ? 'channel' : 'channels'}`);
@@ -112,6 +120,18 @@ export const Features: FC<{
   }, [pack]);
   return (
     <div className="flex flex-col gap-[10px] justify-center text-[16px] text-customColor18">
+      {currentPricing.networks.length > 0 && (
+        <div className="flex flex-col gap-[6px] mb-[4px]">
+          <div className="text-[13px] font-semibold uppercase tracking-wide text-customColor18/60">
+            Included networks
+          </div>
+          <div className="flex flex-wrap gap-[6px]">
+            {currentPricing.networks.map((n) => (
+              <NetworkBadge key={n} name={n} />
+            ))}
+          </div>
+        </div>
+      )}
       {features.map((feature) => (
         <div key={feature} className="flex gap-[20px]">
           <div>
@@ -270,7 +290,7 @@ export const MainBillingComponent: FC<{
     return subscription?.subscriptionTier;
   }, [subscription, initialChannels, monthlyOrYearly, period]);
   const moveToCheckout = useCallback(
-    (billing: 'STANDARD' | 'PRO' | 'FREE', reactivate = false) =>
+    (billing: string, reactivate = false) =>
       async () => {
         if (reactivate) {
           setLoading(true);
@@ -414,7 +434,7 @@ export const MainBillingComponent: FC<{
           setPeriod(monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY');
           setSubscription((subs) => ({
             ...subs!,
-            subscriptionTier: billing,
+            subscriptionTier: billing as SubscriptionTier,
             cancelAt: null,
           }));
           mutate(
@@ -501,7 +521,7 @@ export const MainBillingComponent: FC<{
                         '!bg-red-500'
                     )}
                     onClick={moveToCheckout(
-                      name.toUpperCase() as 'STANDARD' | 'PRO'
+                      name.toUpperCase()
                     )}
                   >
                     {currentPackage === name.toUpperCase()
@@ -527,7 +547,7 @@ export const MainBillingComponent: FC<{
                   !!name && (
                     <Prorate
                       period={monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY'}
-                      pack={name.toUpperCase() as 'STANDARD' | 'PRO'}
+                      pack={name.toUpperCase()}
                     />
                   )}
               </div>

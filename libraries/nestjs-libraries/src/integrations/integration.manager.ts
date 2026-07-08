@@ -76,14 +76,25 @@ export const socialIntegrationList: Array<SocialAbstract & SocialProvider> = [
 
 @Injectable()
 export class IntegrationManager {
-  async getAllIntegrations() {
+  async getAllIntegrations(tier?: string) {
+    const list = tier
+      ? socialIntegrationList.map((p) => ({
+          provider: p,
+          locked: !!(p.allowedPlans?.length && !p.allowedPlans.includes(tier)),
+        }))
+      : socialIntegrationList.map((p) => ({
+          provider: p,
+          locked: false,
+        }));
+
     return {
       social: await Promise.all(
-        socialIntegrationList.map(async (p) => ({
+        list.map(async ({ provider: p, locked }) => ({
           name: p.name,
           identifier: p.identifier,
           toolTip: p.toolTip,
           editor: p.editor,
+          locked,
           isExternal: !!p.externalUrl,
           isWeb3: !!p.isWeb3,
           isChromeExtension: !!p.isChromeExtension,

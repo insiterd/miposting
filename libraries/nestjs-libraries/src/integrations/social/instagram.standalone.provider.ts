@@ -26,6 +26,7 @@ export class InstagramStandaloneProvider
 {
   identifier = 'instagram-standalone';
   name = 'Instagram\n(Standalone)';
+  allowedPlans = ['STANDARD', 'TEAM', 'PRO', 'ULTIMATE'];
   isBetweenSteps = false;
   refreshCron = true;
   scopes = [

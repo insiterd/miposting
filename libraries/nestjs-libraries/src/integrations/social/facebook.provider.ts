@@ -24,6 +24,7 @@ import { Rules } from '@gitroom/nestjs-libraries/chat/rules.description.decorato
 export class FacebookProvider extends SocialAbstract implements SocialProvider {
   identifier = 'facebook';
   name = 'Facebook Page';
+  allowedPlans = ['STANDARD', 'TEAM', 'PRO', 'ULTIMATE'];
   isBetweenSteps = true;
   scopes = [
     'pages_show_list',

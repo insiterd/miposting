@@ -21,6 +21,7 @@ export class WordpressProvider
 {
   identifier = 'wordpress';
   name = 'WordPress';
+  allowedPlans = ['PRO', 'ULTIMATE'];
   isBetweenSteps = false;
   editor = 'html' as const;
   scopes = [] as string[];

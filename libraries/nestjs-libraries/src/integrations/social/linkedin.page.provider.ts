@@ -22,6 +22,7 @@ export class LinkedinPageProvider
 {
   override identifier = 'linkedin-page';
   override name = 'LinkedIn Page';
+  allowedPlans = ['STANDARD', 'TEAM', 'PRO', 'ULTIMATE'];
   override isBetweenSteps = true;
   override refreshWait = true;
   override maxConcurrentJob = 2; // LinkedIn Page has professional posting limits

@@ -17,6 +17,7 @@ export class HashnodeProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Hashnode has lenient publishing limits
   identifier = 'hashnode';
   name = 'Hashnode';
+  allowedPlans = ['PRO', 'ULTIMATE'];
   isBetweenSteps = false;
   scopes = [] as string[];
   editor = 'markdown' as const;

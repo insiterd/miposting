@@ -33,6 +33,7 @@ import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
   name = 'X';
+  allowedPlans = ['STANDARD', 'TEAM', 'PRO', 'ULTIMATE'];
   isBetweenSteps = false;
   scopes = [] as string[];
   stripLinks = () => !!process.env.STRIP_LINKS_FROM_X_POSTS;
