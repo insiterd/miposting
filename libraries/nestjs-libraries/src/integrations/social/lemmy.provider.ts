@@ -19,6 +19,7 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Lemmy instances typically have moderate limits
   identifier = 'lemmy';
   name = 'Lemmy';
+  allowedPlans = ['ULTIMATE'];
   isBetweenSteps = false;
   scopes = [] as string[];
   editor = 'normal' as const;

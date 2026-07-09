@@ -16,6 +16,7 @@ import { object, string } from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { web3List } from '@gitroom/frontend/components/launches/web3/web3.list';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import clsx from 'clsx';
 import copy from 'copy-to-clipboard';
 import { capitalize } from 'lodash';
@@ -24,8 +25,12 @@ const resolver = classValidatorResolver(ApiKeyDto);
 export const useAddProvider = (update?: () => void, invite?: boolean) => {
   const modal = useModals();
   const fetch = useFetch();
+  const user = useUser();
   return useCallback(async () => {
-    const data = await (await fetch('/integrations')).json();
+    const tier = user?.tier?.current || '';
+    const data = await (
+      await fetch(`/integrations${tier ? `?tier=${tier}` : ''}`)
+    ).json();
     modal.openModal({
       title: 'Add Channel',
       withCloseButton: true,
@@ -33,7 +38,7 @@ export const useAddProvider = (update?: () => void, invite?: boolean) => {
         <AddProviderComponent invite={!!invite} update={update} {...data} />
       ),
     });
-  }, []);
+  }, [user?.tier?.current]);
 };
 export const AddProviderButton: FC<{
   update?: () => void;
@@ -359,6 +364,7 @@ export const AddProviderComponent: FC<{
   social: Array<{
     identifier: string;
     name: string;
+    locked: boolean;
     toolTip?: string;
     isExternal: boolean;
     isWeb3: boolean;
@@ -673,28 +679,49 @@ export const AddProviderComponent: FC<{
             .map((item) => (
               <div
                 key={item.identifier}
-                onClick={getSocialLink(
-                  props.invite,
-                  item.identifier,
-                  item.isExternal,
-                  item.isWeb3,
-                  item.isChromeExtension,
-                  item.customFields
-                )}
-                {...(!!item.toolTip
+                onClick={() => {
+                  if (item.locked) {
+                    toaster.show(
+                      t(
+                        'upgrade_to_access',
+                        'Upgrade your plan to access this platform'
+                      ),
+                      'warning'
+                    );
+                    return;
+                  }
+                  getSocialLink(
+                    props.invite,
+                    item.identifier,
+                    item.isExternal,
+                    item.isWeb3,
+                    item.isChromeExtension,
+                    item.customFields
+                  )();
+                }}
+                {...(!!item.toolTip && !item.locked
                   ? {
                       'data-tooltip-id': 'tooltip',
                       'data-tooltip-content': item.toolTip,
+                    }
+                  : item.locked
+                  ? {
+                      'data-tooltip-id': 'tooltip',
+                      'data-tooltip-content': t(
+                        'upgrade_to_access',
+                        'Upgrade your plan to access this platform'
+                      ),
                     }
                   : {})}
                 className={clsx(
                   isMobile
                     ? 'flex-row h-[72px] p-[16px]'
                     : 'flex-col p-[10px] h-[100px] justify-center',
-                  'w-full text-[14px] rounded-[8px] bg-newTableHeader text-textColor relative items-center flex gap-[10px] cursor-pointer'
+                  'w-full text-[14px] rounded-[8px] bg-newTableHeader text-textColor relative items-center flex gap-[10px] cursor-pointer',
+                  item.locked && 'opacity-50'
                 )}
               >
-                <div>
+                <div className="relative">
                   {item.identifier === 'youtube' ? (
                     <img src={`/icons/platforms/youtube.svg`} />
                   ) : (
@@ -707,6 +734,21 @@ export const AddProviderComponent: FC<{
                       src={`/icons/platforms/${item.identifier}.png`}
                     />
                   )}
+                  {item.locked && (
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="absolute -bottom-1 -right-1 h-4 w-4 text-gray-400"
+                    >
+                      <path
+                        d="M7 10.028V7A5 5 0 0117 7v3.028m-5 5v2m-7-2a3 3 0 013-3h8a3 3 0 013 3v5a3 3 0 01-3 3H8a3 3 0 01-3-3v-5z"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  )}
                 </div>
                 <div
                   className={clsx(
@@ -715,7 +757,7 @@ export const AddProviderComponent: FC<{
                   )}
                 >
                   {item.name}
-                  {!!item.toolTip && !isMobile && (
+                  {!!item.toolTip && !item.locked && !isMobile && (
                     <svg
                       width="15"
                       height="15"

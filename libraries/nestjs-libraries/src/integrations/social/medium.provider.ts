@@ -15,6 +15,7 @@ export class MediumProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Medium has lenient publishing limits
   identifier = 'medium';
   name = 'Medium';
+  allowedPlans = ['PRO', 'ULTIMATE'];
   isBetweenSteps = false;
   scopes = [] as string[];
   editor = 'markdown' as const;

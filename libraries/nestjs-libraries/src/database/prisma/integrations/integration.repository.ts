@@ -582,6 +582,23 @@ export class IntegrationRepository {
     }
   }
 
+  async disableIntegrationsByProviders(
+    org: string,
+    providerIdentifiers: string[]
+  ) {
+    await this._integration.model.integration.updateMany({
+      where: {
+        organizationId: org,
+        providerIdentifier: { in: providerIdentifiers },
+        disabled: false,
+        deletedAt: null,
+      },
+      data: {
+        disabled: true,
+      },
+    });
+  }
+
   getPlugsByIntegrationId(org: string, id: string) {
     return this._plugs.model.plugs.findMany({
       where: {

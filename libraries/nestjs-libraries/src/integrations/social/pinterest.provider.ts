@@ -29,6 +29,7 @@ export class PinterestProvider
 {
   identifier = 'pinterest';
   name = 'Pinterest';
+  allowedPlans = ['TEAM', 'PRO', 'ULTIMATE'];
   isBetweenSteps = false;
   scopes = [
     'boards:read',

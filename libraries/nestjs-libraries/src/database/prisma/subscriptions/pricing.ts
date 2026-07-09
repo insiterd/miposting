@@ -15,6 +15,7 @@ export interface PricingInnerInterface {
   public_api: boolean;
   webhooks: number;
   autoPost: boolean;
+  networks: string[];
 }
 export interface PricingInterface {
   [key: string]: PricingInnerInterface;
@@ -37,6 +38,7 @@ export const pricing: PricingInterface = {
     webhooks: 0,
     autoPost: false,
     generate_videos: 0,
+    networks: [],
   },
   STANDARD: {
     current: 'STANDARD',
@@ -55,6 +57,7 @@ export const pricing: PricingInterface = {
     webhooks: 2,
     autoPost: false,
     generate_videos: 3,
+    networks: ['X', 'LinkedIn', 'LinkedIn Page', 'Instagram', 'Instagram Standalone', 'Facebook', 'Threads'],
   },
   TEAM: {
     current: 'TEAM',
@@ -73,6 +76,7 @@ export const pricing: PricingInterface = {
     webhooks: 10,
     autoPost: true,
     generate_videos: 10,
+    networks: ['X', 'LinkedIn', 'LinkedIn Page', 'Instagram', 'Instagram Standalone', 'Facebook', 'Threads', 'YouTube', 'GMB', 'TikTok', 'Pinterest', 'Dribbble'],
   },
   PRO: {
     current: 'PRO',
@@ -91,6 +95,7 @@ export const pricing: PricingInterface = {
     webhooks: 30,
     autoPost: true,
     generate_videos: 30,
+    networks: ['X', 'LinkedIn', 'LinkedIn Page', 'Instagram', 'Instagram Standalone', 'Facebook', 'Threads', 'YouTube', 'GMB', 'TikTok', 'Pinterest', 'Dribbble', 'Reddit', 'Discord', 'Slack', 'Telegram', 'Medium', 'DevTo', 'Hashnode', 'Wordpress'],
   },
   ULTIMATE: {
     current: 'ULTIMATE',
@@ -109,5 +114,6 @@ export const pricing: PricingInterface = {
     webhooks: 10000,
     autoPost: true,
     generate_videos: 60,
+    networks: ['X', 'LinkedIn', 'LinkedIn Page', 'Instagram', 'Instagram Standalone', 'Facebook', 'Threads', 'YouTube', 'GMB', 'TikTok', 'Pinterest', 'Dribbble', 'Reddit', 'Discord', 'Slack', 'Telegram', 'Medium', 'DevTo', 'Hashnode', 'Wordpress', 'Kick', 'Twitch', 'Mastodon', 'Bluesky', 'Lemmy', 'Farcaster', 'Nostr', 'Vk', 'Listmonk', 'Moltbook', 'Whop', 'Skool', 'Mewe'],
   },
 };

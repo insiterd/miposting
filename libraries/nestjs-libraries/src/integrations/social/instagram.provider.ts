@@ -27,6 +27,7 @@ export class InstagramProvider
 {
   identifier = 'instagram';
   name = 'Instagram\n(Facebook Business)';
+  allowedPlans = ['STANDARD', 'TEAM', 'PRO', 'ULTIMATE'];
   isBetweenSteps = true;
   toolTip = 'Instagram must be business and connected to a Facebook page';
   scopes = [

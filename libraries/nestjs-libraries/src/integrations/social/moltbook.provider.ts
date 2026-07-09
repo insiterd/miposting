@@ -16,6 +16,7 @@ export class MoltbookProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 100; // Moltbook: 100 requests/minute
   identifier = 'moltbook';
   name = 'Moltbook';
+  allowedPlans = ['ULTIMATE'];
   isBetweenSteps = false;
   scopes = [] as string[];
   isWeb3 = true;

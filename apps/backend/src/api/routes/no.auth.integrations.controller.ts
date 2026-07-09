@@ -5,6 +5,7 @@ import {
   HttpException,
   Param,
   Post,
+  Query,
   UseFilters,
 } from '@nestjs/common';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
@@ -23,6 +24,7 @@ import {
 } from '@gitroom/backend/services/auth/permissions/permission.exception.class';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
 import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 
 @ApiTags('Integrations')
 @Controller('/integrations')
@@ -31,12 +33,13 @@ export class NoAuthIntegrationsController {
     private _integrationManager: IntegrationManager,
     private _integrationService: IntegrationService,
     private _refreshIntegrationService: RefreshIntegrationService,
-    private _organizationService: OrganizationService
+    private _organizationService: OrganizationService,
+    private _subscriptionService: SubscriptionService
   ) {}
 
   @Get('/')
-  getIntegrations() {
-    return this._integrationManager.getAllIntegrations();
+  getIntegrations(@Query('tier') tier?: string) {
+    return this._integrationManager.getAllIntegrations(tier);
   }
 
   @Post('/social-connect/:integration')
@@ -70,6 +73,26 @@ export class NoAuthIntegrationsController {
     }
 
     const org = await this._organizationService.getOrgById(organization);
+
+    if (
+      integrationProvider.allowedPlans?.length &&
+      process.env.STRIPE_PUBLISHABLE_KEY
+    ) {
+      const subscription =
+        await this._subscriptionService.getSubscriptionByOrganizationId(
+          org.id
+        );
+      const tier =
+        subscription?.subscriptionTier ||
+        'FREE';
+
+      if (!integrationProvider.allowedPlans.includes(tier)) {
+        throw new HttpException(
+          'Your current plan does not support this integration. Please upgrade your plan.',
+          403
+        );
+      }
+    }
 
     if (!integrationProvider.customFields) {
       await ioRedis.del(`login:${body.state}`);

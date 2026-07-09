@@ -15,6 +15,7 @@ export class DevToProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Dev.to has moderate publishing limits
   identifier = 'devto';
   name = 'Dev.to';
+  allowedPlans = ['PRO', 'ULTIMATE'];
   isBetweenSteps = false;
   editor = 'markdown' as const;
   scopes = [] as string[];

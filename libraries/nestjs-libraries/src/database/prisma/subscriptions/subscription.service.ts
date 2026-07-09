@@ -6,6 +6,7 @@ import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/o
 import { Organization } from '@prisma/client';
 import dayjs from 'dayjs';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+import { socialIntegrationList } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 
 @Injectable()
 export class SubscriptionService {
@@ -86,6 +87,22 @@ export class SubscriptionService {
       );
     }
 
+    const newTier = billing;
+    const restrictedProviders = socialIntegrationList
+      .filter(
+        (p) =>
+          p.allowedPlans?.length &&
+          !p.allowedPlans.includes(newTier)
+      )
+      .map((p) => p.identifier);
+
+    if (restrictedProviders.length > 0) {
+      await this._integrationService.disableIntegrationsByProviders(
+        organizationId,
+        restrictedProviders
+      );
+    }
+
     if (from.team_members && !to.team_members) {
       await this._organizationService.disableOrEnableNonSuperAdminUsers(
         organizationId,
@@ -146,6 +163,22 @@ export class SubscriptionService {
       await this._integrationService.disableIntegrations(
         getOrgByCustomerId?.id!,
         currentTotalChannels.length - totalChannels
+      );
+    }
+
+    const newTier = billing;
+    const restrictedProviders = socialIntegrationList
+      .filter(
+        (p) =>
+          p.allowedPlans?.length &&
+          !p.allowedPlans.includes(newTier)
+      )
+      .map((p) => p.identifier);
+
+    if (restrictedProviders.length > 0) {
+      await this._integrationService.disableIntegrationsByProviders(
+        getOrgByCustomerId?.id!,
+        restrictedProviders
       );
     }
 

@@ -277,6 +277,16 @@ export class IntegrationService {
     return this._integrationRepository.disableIntegrations(org, totalChannels);
   }
 
+  async disableIntegrationsByProviders(
+    org: string,
+    providerIdentifiers: string[]
+  ) {
+    return this._integrationRepository.disableIntegrationsByProviders(
+      org,
+      providerIdentifiers
+    );
+  }
+
   async checkForDeletedOnceAndUpdate(org: string, page: string) {
     return this._integrationRepository.checkForDeletedOnceAndUpdate(org, page);
   }
