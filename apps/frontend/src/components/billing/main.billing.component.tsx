@@ -76,7 +76,7 @@ export const Prorate: FC<{
   );
 };
 const NetworkBadge: FC<{ name: string }> = ({ name }) => (
-  <span className="inline-flex items-center gap-1 rounded-[4px] bg-[#2a2a3a] px-[8px] py-[2px] text-[12px] text-[#c0c0d0]">
+  <span className="inline-flex items-center gap-1 rounded-[4px] bg-[#2a2a3a] px-[8px] py-[2px] text-[12px] text-[#c0c0d0] max-w-[130px] truncate">
     {name}
   </span>
 );
@@ -86,6 +86,7 @@ export const Features: FC<{
 }> = (props) => {
   const { pack } = props;
   const currentPricing = pricing[pack];
+  const [showAll, setShowAll] = useState(false);
   if (!currentPricing) return null;
 
   const features = useMemo(() => {
@@ -118,18 +119,34 @@ export const Features: FC<{
     }
     return list;
   }, [pack]);
+
+  const hasOverflow = currentPricing.networks.length > 0;
+
   return (
     <div className="flex flex-col gap-[10px] justify-center text-[16px] text-customColor18">
-      {currentPricing.networks.length > 0 && (
-        <div className="flex flex-col gap-[6px] mb-[4px]">
-          <div className="text-[13px] font-semibold uppercase tracking-wide text-customColor18/60">
+      {hasOverflow && (
+        <div className="flex flex-col mb-[4px]">
+          <div className="text-[12px] font-semibold uppercase tracking-wide text-customColor18/60 mb-[6px]">
             Included networks
           </div>
-          <div className="flex flex-wrap gap-[6px]">
-            {currentPricing.networks.map((n) => (
+          <div className={`${showAll ? 'grid grid-cols-3' : 'flex flex-wrap'} justify-center lg:justify-start gap-[4px]`}>
+            {(showAll
+              ? currentPricing.networks
+              : currentPricing.networks.slice(0, 5)
+            ).map((n) => (
               <NetworkBadge key={n} name={n} />
             ))}
           </div>
+          {currentPricing.networks.length > 5 && (
+            <button
+              onClick={() => setShowAll(!showAll)}
+              className="text-[11px] text-blue-400 hover:text-blue-300 underline decoration-dotted mt-[4px] text-left"
+            >
+              {showAll
+                ? 'Show less'
+                : `Show all ${currentPricing.networks.length} networks`}
+            </button>
+          )}
         </div>
       )}
       {features.map((feature) => (

@@ -313,6 +313,7 @@ type FeatureItem = {
 export const BillingFeatures: FC<{ tier: string }> = ({ tier }) => {
   const t = useT();
   const currentPricing = pricing[tier];
+  const [showAll, setShowAll] = useState(false);
   const features = useMemo(() => {
     const channelsOr = currentPricing.channel;
     const list: FeatureItem[] = [];
@@ -382,22 +383,35 @@ export const BillingFeatures: FC<{ tier: string }> = ({ tier }) => {
   };
 
   return (
-    <div className="flex flex-col gap-[16px]">
+    <div className="flex flex-col gap-[12px]">
       {currentPricing?.networks?.length > 0 && (
         <div>
-          <div className="text-[14px] font-semibold uppercase tracking-wide text-textItemBlur mb-[8px]">
+          <div className="text-[13px] font-semibold uppercase tracking-wide text-textItemBlur mb-[6px]">
             Included networks
           </div>
-          <div className="flex flex-wrap gap-[6px]">
-            {currentPricing.networks.map((n) => (
+          <div className={`${showAll ? 'grid grid-cols-3' : 'flex flex-wrap'} justify-center lg:justify-start gap-[4px]`}>
+            {(showAll
+              ? currentPricing.networks
+              : currentPricing.networks.slice(0, 5)
+            ).map((n) => (
               <span
                 key={n}
-                className="inline-flex items-center rounded-[4px] bg-[#2a2a3a] px-[10px] py-[3px] text-[13px] text-[#c0c0d0]"
+                className="inline-flex items-center rounded-[4px] bg-[#2a2a3a] px-[8px] py-[2px] text-[12px] text-[#c0c0d0] max-w-[130px] truncate"
               >
                 {n}
               </span>
             ))}
           </div>
+          {currentPricing.networks.length > 5 && (
+            <button
+              onClick={() => setShowAll(!showAll)}
+              className="text-[11px] text-blue-400 hover:text-blue-300 underline decoration-dotted mt-[4px]"
+            >
+              {showAll
+                ? 'Show less'
+                : `Show all ${currentPricing.networks.length} networks`}
+            </button>
+          )}
         </div>
       )}
       <div className="grid grid-cols-2 mobile:grid-cols-1 gap-y-[8px] gap-x-[32px]">
