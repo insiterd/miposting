@@ -24,7 +24,7 @@ services:
       - "traefik.http.services.postiz.loadbalancer.server.port=5000"
       - "traefik.http.routers.postiz.rule=Host(`app.miposting.com`)"
       - "traefik.http.routers.postiz.entrypoints=https"
-      - "traefik.http.routers.postiz.tls.certResolver=letsencrypt"
+      - "traefik.http.routers.postiz.tls=true"
       - "traefik.http.routers.postiz.middlewares=gzip"
     healthcheck:
       test: curl -f http://localhost:5000/ || exit 1
@@ -82,7 +82,7 @@ services:
       - "traefik.http.services.landing.loadbalancer.server.port=80"
       - "traefik.http.routers.landing.rule=Host(`miposting.com`)"
       - "traefik.http.routers.landing.entrypoints=https"
-      - "traefik.http.routers.landing.tls.certResolver=letsencrypt"
+      - "traefik.http.routers.landing.tls=true"
       - "traefik.http.routers.landing.middlewares=gzip"
     healthcheck:
       test: wget -qO- http://127.0.0.1:80/ || exit 1
