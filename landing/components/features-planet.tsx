@@ -95,7 +95,7 @@ export default function FeaturesPlanet() {
           <div className="mt-12 text-center" data-aos="zoom-y-out">
             <a
               className="btn inline-flex bg-linear-to-t from-blue-600 to-blue-500 bg-[length:100%_100%] bg-[bottom] text-white shadow-sm hover:bg-[length:100%_150%]"
-              href="https://miposting.insiterd.com/register"
+              href="https://app.miposting.com/register"
             >
               <span className="relative inline-flex items-center">
                 Prueba Gratis 7 Días{" "}

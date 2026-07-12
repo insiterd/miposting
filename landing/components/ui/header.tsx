@@ -50,13 +50,13 @@ export default function Header() {
 
           <div className="flex items-center gap-3">
             <Link
-              href="https://miposting.insiterd.com/login"
+              href="https://app.miposting.com/login"
               className="btn-sm bg-white text-gray-800 shadow-sm hover:bg-gray-50"
             >
               Iniciar Sesión
             </Link>
             <Link
-              href="https://miposting.insiterd.com/register"
+              href="https://app.miposting.com/register"
               className="btn-sm bg-blue-500 text-gray-200 shadow-sm hover:bg-blue-600"
             >
               Registrarse

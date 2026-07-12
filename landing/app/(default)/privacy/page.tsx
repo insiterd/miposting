@@ -316,10 +316,10 @@ export default function Privacy() {
               <li>
                 Sitio web:{" "}
                 <a
-                  href="https://miposting.insiterd.com"
+                  href="https://miposting.com"
                   className="text-blue-600 underline hover:text-blue-800"
                 >
-                  https://miposting.insiterd.com
+                  https://miposting.com
                 </a>
               </li>
             </ul>

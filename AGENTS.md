@@ -104,8 +104,8 @@ All apps load root `.env` explicitly: `dotenv -e ../../.env`. No auto-detection.
 
 ## Domain
 
-- Production app runs at `miposting.insiterd.com`
-- Landing login/register links point to `https://miposting.insiterd.com/login` and `/register`
+- Production app runs at `app.miposting.com`
+- Landing login/register links point to `https://app.miposting.com/login` and `/register`
 
 ## Important gotchas
 

@@ -56,7 +56,7 @@ const plans = [
     included: networks.standard,
     extra: null,
     cta: "Probar 7 Días Gratis",
-    href: "https://miposting.insiterd.com/register",
+    href: "https://app.miposting.com/register",
     featured: false,
   },
   {
@@ -75,7 +75,7 @@ const plans = [
     included: [...networks.standard, ...networks.team],
     extra: null,
     cta: "Probar 7 Días Gratis",
-    href: "https://miposting.insiterd.com/register",
+    href: "https://app.miposting.com/register",
     featured: true,
   },
   {
@@ -94,7 +94,7 @@ const plans = [
     included: [...networks.standard, ...networks.team],
     extra: { label: "8 redes adicionales", items: networks.pro },
     cta: "Probar 7 Días Gratis",
-    href: "https://miposting.insiterd.com/register",
+    href: "https://app.miposting.com/register",
     featured: false,
   },
   {
@@ -113,7 +113,7 @@ const plans = [
     included: [...networks.standard, ...networks.team],
     extra: { label: "21 redes adicionales", items: networks.pro },
     cta: "Probar 7 Días Gratis",
-    href: "https://miposting.insiterd.com/register",
+    href: "https://app.miposting.com/register",
     featured: false,
   },
 ];

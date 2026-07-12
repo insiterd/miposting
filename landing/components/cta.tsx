@@ -22,7 +22,7 @@ export default function Cta() {
             <div className="mx-auto max-w-xs sm:flex sm:max-w-none sm:justify-center">
               <a
                 className="btn group mb-4 w-full bg-linear-to-t from-blue-600 to-blue-500 bg-[length:100%_100%] bg-[bottom] text-white shadow-sm hover:bg-[length:100%_150%] sm:mb-0 sm:w-auto"
-                href="https://miposting.insiterd.com/register"
+                href="https://app.miposting.com/register"
               >
                 <span className="relative inline-flex items-center">
                   Prueba Gratis 7 Días{" "}

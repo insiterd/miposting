@@ -219,7 +219,7 @@ export function RegisterAfter({
                 )}
                 &nbsp;
                 <a
-                  href={`https://miposting.insiterd.com/terms`}
+                  href={`https://miposting.com/terms`}
                   className="underline hover:font-bold"
                   rel="nofollow"
                 >
@@ -228,7 +228,7 @@ export function RegisterAfter({
                 &nbsp;
                 {t('and', 'and')}&nbsp;
                 <a
-                  href={`https://miposting.insiterd.com/privacy`}
+                  href={`https://miposting.com/privacy`}
                   rel="nofollow"
                   className="underline hover:font-bold"
                 >
