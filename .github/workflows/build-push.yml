@@ -72,3 +72,17 @@ jobs:
             ${{ env.LANDING_IMAGE }}:latest
           cache-from: type=registry,ref=${{ env.LANDING_IMAGE }}:cache
           cache-to: type=registry,ref=${{ env.LANDING_IMAGE }}:cache,mode=max
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build-postiz, build-landing]
+    steps:
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.VPS_SSH_KEY }}
+          known_hosts: ${{ secrets.VPS_HOST }} ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBDhbWsLELGgA9ZzI81PhOhklJh4quXSRbjKmRWGGL8ORlx1JkeK0FNgR/ff4NRFhG1sWSXwcpTKVAJH+z60isgg=
+
+      - name: Pull latest images and restart
+        run: |
+          ssh root@${{ secrets.VPS_HOST }} "docker pull ghcr.io/insiterd/miposting-postiz:latest && docker pull ghcr.io/insiterd/miposting-landing:latest && docker compose -f /data/coolify/applications/flofb07yh5gfcgxhw0ko0m1j/docker-compose.yaml up -d postiz postiz-landing"
