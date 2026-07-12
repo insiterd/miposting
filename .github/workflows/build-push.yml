@@ -85,4 +85,4 @@ jobs:
 
       - name: Pull latest images and restart
         run: |
-          ssh root@${{ secrets.VPS_HOST }} "docker pull ghcr.io/insiterd/miposting-postiz:latest && docker pull ghcr.io/insiterd/miposting-landing:latest && docker compose -f /data/coolify/applications/flofb07yh5gfcgxhw0ko0m1j/docker-compose.yaml up -d postiz postiz-landing"
+          ssh root@${{ secrets.VPS_HOST }} "docker pull ghcr.io/insiterd/miposting-postiz:latest && docker pull ghcr.io/insiterd/miposting-landing:latest && docker compose -f /data/coolify/applications/flofb07yh5gfcgxhw0ko0m1j/docker-compose.yaml up -d --no-deps postiz postiz-landing"
