@@ -1,6 +1,6 @@
 services:
   postiz:
-    build: .
+    image: ghcr.io/insiterd/miposting-postiz:latest
     container_name: postiz
     restart: always
     environment:
@@ -13,9 +13,6 @@ services:
       TEMPORAL_ADDRESS: "temporal:7233"
       IS_GENERAL: 'true'
       DISABLE_REGISTRATION: 'false'
-      STORAGE_PROVIDER: 'local'
-      UPLOAD_DIRECTORY: '/uploads'
-      NEXT_PUBLIC_UPLOAD_DIRECTORY: '/uploads'
       FEE_AMOUNT: 0.05
       API_LIMIT: 30
       NX_ADD_PLUGINS: false
@@ -26,9 +23,15 @@ services:
       - "traefik.enable=true"
       - "traefik.http.services.postiz.loadbalancer.server.port=5000"
       - "traefik.http.routers.postiz.rule=Host(`app.miposting.com`)"
-      - "traefik.http.routers.postiz.entrypoints=websecure"
+      - "traefik.http.routers.postiz.entrypoints=https"
       - "traefik.http.routers.postiz.tls.certResolver=letsencrypt"
       - "traefik.http.routers.postiz.middlewares=gzip"
+    healthcheck:
+      test: curl -f http://localhost:5000/ || exit 1
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
     networks:
       - postiz-network
       - temporal-network
@@ -71,16 +74,14 @@ services:
       - postiz-network
 
   postiz-landing:
-    build:
-      context: .
-      dockerfile: landing/Dockerfile
+    image: ghcr.io/insiterd/miposting-landing:latest
     container_name: postiz-landing
     restart: always
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.landing.loadbalancer.server.port=80"
       - "traefik.http.routers.landing.rule=Host(`miposting.com`)"
-      - "traefik.http.routers.landing.entrypoints=websecure"
+      - "traefik.http.routers.landing.entrypoints=https"
       - "traefik.http.routers.landing.tls.certResolver=letsencrypt"
       - "traefik.http.routers.landing.middlewares=gzip"
     healthcheck:
@@ -139,6 +140,7 @@ services:
       - ES_SEEDS=temporal-elasticsearch
       - ES_VERSION=v7
       - TEMPORAL_NAMESPACE=default
+      - BIND_ON_IP=0.0.0.0
     networks:
       - temporal-network
     volumes:

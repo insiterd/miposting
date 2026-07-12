@@ -31,6 +31,6 @@ RUN apt-get remove -y g++ make python3-pip && apt-get autoremove -y && apt-get c
 EXPOSE 5000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:5000/api/health || exit 1
+  CMD curl -f http://localhost:5000/ || exit 1
 
 CMD ["sh", "-c", "nginx && pnpm run pm2"]
