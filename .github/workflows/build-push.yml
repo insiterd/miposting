@@ -97,8 +97,10 @@ jobs:
 
             echo '=== Waiting for containers to be healthy... ==='
             for i in \$(seq 1 30); do
-              HEALTH=\$(docker inspect --format='{{.State.Health.Status}}' postiz-flofb07yh5gfcgxhw0ko0m1j 2>/dev/null || echo 'creating')
-              LANDING_HEALTH=\$(docker inspect --format='{{.State.Health.Status}}' postiz-landing-flofb07yh5gfcgxhw0ko0m1j 2>/dev/null || echo 'creating')
+              POSTIZ_ID=\$(docker ps -q -f 'label=com.docker.compose.service=postiz')
+              LANDING_ID=\$(docker ps -q -f 'label=com.docker.compose.service=postiz-landing')
+              HEALTH=\$(docker inspect --format='{{.State.Health.Status}}' \"\$POSTIZ_ID\" 2>/dev/null || echo 'n/a')
+              LANDING_HEALTH=\$(docker inspect --format='{{.State.Health.Status}}' \"\$LANDING_ID\" 2>/dev/null || echo 'n/a')
               echo \"  postiz: \$HEALTH, landing: \$LANDING_HEALTH\"
               if [ \"\$HEALTH\" = 'healthy' ] && [ \"\$LANDING_HEALTH\" = 'healthy' ]; then
                 echo 'Both containers healthy!'
