@@ -5,7 +5,7 @@ export default function Footer({ border = false }: { border?: boolean }) {
   return (
     <footer>
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className={`relative z-10 grid gap-10 py-8 sm:grid-cols-12 md:py-12 ${border ? "border-t [border-image:linear-gradient(to_right,transparent,var(--color-slate-200),transparent)1]" : ""}`}>
+        <div className={`grid gap-10 py-8 sm:grid-cols-12 md:py-12 ${border ? "border-t [border-image:linear-gradient(to_right,transparent,var(--color-slate-200),transparent)1]" : ""}`}>
           <div className="space-y-2 sm:col-span-12 lg:col-span-4">
             <div>
               <Logo />
@@ -48,11 +48,6 @@ export default function Footer({ border = false }: { border?: boolean }) {
                 </Link>
               </li>
               <li>
-                <Link className="text-gray-600 transition hover:text-gray-900" href="https://docs.postiz.com" target="_blank">
-                  Documentación
-                </Link>
-              </li>
-              <li>
                 <Link className="text-gray-600 transition hover:text-gray-900" href="/#contact">
                   Contacto
                 </Link>
@@ -64,13 +59,8 @@ export default function Footer({ border = false }: { border?: boolean }) {
             <h3 className="text-sm font-medium">Legal</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link className="text-gray-600 transition hover:text-gray-900" href="#0">
-                  Términos
-                </Link>
-              </li>
-              <li>
-                <Link className="text-gray-600 transition hover:text-gray-900" href="#0">
-                  Privacidad
+                <Link className="text-gray-600 transition hover:text-gray-900" href="/terms">
+                  Términos y condiciones
                 </Link>
               </li>
             </ul>
