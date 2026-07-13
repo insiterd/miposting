@@ -107,5 +107,7 @@ jobs:
               fi
               sleep 10
             done
+            echo 'Restarting Traefik to refresh routes...'
+            docker restart coolify-proxy || true
             echo 'Deploy complete'
           "
