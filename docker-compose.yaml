@@ -3,6 +3,12 @@ services:
     image: ghcr.io/insiterd/miposting-postiz:latest
     container_name: postiz
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 6g
+        reservations:
+          memory: 512m
     environment:
       MAIN_URL: 'https://miposting.com'
       FRONTEND_URL: 'https://app.miposting.com'
@@ -95,8 +101,12 @@ services:
   temporal-elasticsearch:
     container_name: temporal-elasticsearch
     image: elasticsearch:7.17.27
+    deploy:
+      resources:
+        limits:
+          memory: 768m
     environment:
-      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
       - cluster.routing.allocation.disk.threshold_enabled=true
       - cluster.routing.allocation.disk.watermark.low=512mb
       - cluster.routing.allocation.disk.watermark.high=256mb
