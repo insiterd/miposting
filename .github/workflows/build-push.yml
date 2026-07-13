@@ -88,26 +88,16 @@ jobs:
           ssh root@${{ secrets.VPS_HOST }} "
             set -e
             COMPOSE_FILE='/data/coolify/applications/flofb07yh5gfcgxhw0ko0m1j/docker-compose.yaml'
-            docker compose -f \"\$COMPOSE_FILE\" stop postiz postiz-landing
-            docker pull ghcr.io/insiterd/miposting-postiz:latest
-            docker pull ghcr.io/insiterd/miposting-landing:latest
-            docker compose -f \"\$COMPOSE_FILE\" up -d --no-deps postiz postiz-landing
-            echo 'Waiting for postiz healthcheck...'
-            for i in \$(seq 1 12); do
-              cid=\$(docker ps -q --filter name=postiz --filter name=flofb07yh5gfcgxhw0ko0m1j --latest 2>/dev/null | head -1)
-              if [ -n \"\$cid\" ]; then
-                status=\$(docker inspect --format='{{.State.Health.Status}}' \"\$cid\" 2>/dev/null || echo 'starting')
-              else
-                status='not_found'
-              fi
-              echo \"  Attempt \$i/12: status=\$status\"
-              if [ \"\$status\" = 'healthy' ]; then
-                echo 'Postiz is healthy!'
-                break
-              fi
-              sleep 10
-            done
-            echo 'Restarting Traefik to refresh routes...'
+
+            # 1. Pull new images while old containers still run
+            docker compose -f \"\$COMPOSE_FILE\" pull postiz postiz-landing
+
+            # 2. Recreate containers with --wait (built-in healthcheck wait)
+            docker compose -f \"\$COMPOSE_FILE\" up -d --no-deps --wait postiz postiz-landing
+
+            # 3. Restart Traefik to ensure routes are refreshed
+            echo 'Refreshing Traefik routes...'
             docker restart coolify-proxy || true
+
             echo 'Deploy complete'
           "
