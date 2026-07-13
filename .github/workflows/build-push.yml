@@ -89,15 +89,31 @@ jobs:
             set -e
             COMPOSE_FILE='/data/coolify/applications/flofb07yh5gfcgxhw0ko0m1j/docker-compose.yaml'
 
-            # 1. Pull new images while old containers still run
+            echo '=== Pulling new images ==='
             docker compose -f \"\$COMPOSE_FILE\" pull postiz postiz-landing
 
-            # 2. Recreate containers with --wait (built-in healthcheck wait)
-            docker compose -f \"\$COMPOSE_FILE\" up -d --no-deps --wait postiz postiz-landing
+            echo '=== Recreating containers ==='
+            docker compose -f \"\$COMPOSE_FILE\" up -d --no-deps postiz postiz-landing
 
-            # 3. Restart Traefik to ensure routes are refreshed
-            echo 'Refreshing Traefik routes...'
+            echo '=== Waiting for containers to be healthy... ==='
+            for i in \$(seq 1 30); do
+              HEALTH=\$(docker inspect --format='{{.State.Health.Status}}' postiz-flofb07yh5gfcgxhw0ko0m1j 2>/dev/null || echo 'creating')
+              LANDING_HEALTH=\$(docker inspect --format='{{.State.Health.Status}}' postiz-landing-flofb07yh5gfcgxhw0ko0m1j 2>/dev/null || echo 'creating')
+              echo \"  postiz: \$HEALTH, landing: \$LANDING_HEALTH\"
+              if [ \"\$HEALTH\" = 'healthy' ] && [ \"\$LANDING_HEALTH\" = 'healthy' ]; then
+                echo 'Both containers healthy!'
+                break
+              fi
+              sleep 3
+            done
+
+            echo '=== Refreshing Traefik routes ==='
             docker restart coolify-proxy || true
 
-            echo 'Deploy complete'
+            echo '=== Verifying endpoints ==='
+            sleep 5
+            curl -sfI --max-time 10 'https://app.miposting.com/api/health' && echo 'API OK'
+            curl -sfI --max-time 10 'https://miposting.com/' && echo 'Landing OK'
+
+            echo '=== Deploy complete ==='
           "
