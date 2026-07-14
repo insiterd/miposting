@@ -121,3 +121,111 @@ All apps load root `.env` explicitly: `dotenv -e ../../.env`. No auto-detection.
 
 - `CLAUDE.md` — detailed component/fetch/backend conventions
 - `.github/copilot-instructions.md` — architecture overview + Sentry patterns
+
+## CI/CD pipeline
+
+El CI/CD build-push.yml hace:
+1. Build + push a GHCR (dos jobs paralelos: postiz, landing)
+2. Deploy via SSH al VPS: `pull → up -d --no-deps → healthcheck loop → restart coolify-proxy → verify endpoints`
+
+### Errores conocidos
+
+- **`Error response from daemon: No such container`** — no usar `--wait` en `docker compose up -d`. Docker Compose referencea container IDs viejos que ya no existen. Usar loop manual de healthcheck con `docker ps -q -f "label=com.docker.compose.service=..."`.
+- **Los nombres de container cambian en cada recreate** — el sufijo numérico (e.g. `-022131340838`) varía. Usar labels (`com.docker.compose.service`) para identificar containers, no nombres estáticos.
+- **Traefik no refresca rutas automáticamente** — siempre ejecutar `docker restart coolify-proxy` al final del deploy. Docker provider no siempre actualiza routers cuando cambia el container ID.
+
+### Healthcheck loop
+
+Usar labels estables para encontrar containers post recreate:
+```bash
+POSTIZ_ID=$(docker ps -q -f 'label=com.docker.compose.service=postiz')
+docker inspect --format '{{.State.Health.Status}}' "$POSTIZ_ID"
+```
+
+### Entries to never add
+- **No agregar `miposting.com` al `certificates.yaml`** — el landing obtiene su cert vía ACME automático de Traefik. Agregar una entrada file-based rompe todo el ruteo HTTPS.
+- **No usar `certResolver=letsencrypt` en labels de router** — usar `tls=true` para que Traefik matchee con file-based certs.
+
+## SSL / Traefik issues fixed (2026-07-13)
+
+### Root causes found
+1. **Empty cert dir** `/data/coolify/proxy/certs/miposting.com/` caused Traefik "no PEM data" errors
+2. **Bogus Coolify labels** `Host(``) && PathPrefix(...)` on HTTP entrypoint blocked valid HTTPS routers
+3. **File provider TLS not loading** via `certificates.yaml` alone for Docker routers
+
+### Solution implemented
+**File-provider explicit routers** in `/data/coolify/proxy/dynamic/routers.yaml`:
+```yaml
+http:
+  routers:
+    postiz-api:
+      rule: "Host(`app.miposting.com`)"
+      entryPoints: [https]
+      service: postiz-api
+      tls: true
+      priority: 100
+    landing-web:
+      rule: "Host(`miposting.com`)"
+      entryPoints: [https]
+      service: landing-web
+      tls: true
+      priority: 100
+  services:
+    postiz-api:
+      loadBalancer:
+        servers: [{url: "http://postiz:5000"}]
+        passHostHeader: true
+    landing-web:
+      loadBalancer:
+        servers: [{url: "http://postiz-landing:80"}]
+        passHostHeader: true
+  middlewares:
+    gzip:
+      compress: {}
+```
+
+**Why this works:**
+- Bypasses Docker labels entirely for HTTPS routing
+- Uses Docker Compose service names (`postiz`, `postiz-landing`) for internal DNS
+- `certificates.yaml` provides file-based cert for `app.miposting.com`
+- `miposting.com` uses ACME auto-provisioned cert from `acme.json`
+- CI/CD `docker restart coolify-proxy` reloads file provider config automatically
+
+### Remaining items
+- [ ] Coolify API autoloader bug (`Class "App\Models\User" not found`) - only affects API deploys
+- [ ] `.env` persistence in Coolify UI - manually placed at `/data/coolify/applications/flofb07yh5gfcgxhw0ko0m1j/.env`
+- [ ] Terminate AWS EC2 `18.218.99.94` (pending confirmation)
+
+## Coolify API & .env persistence (2026-07-13)
+
+### Coolify API autoloader bug fixed
+**Issue**: `Class "App\Models\User" not found` in `getTeamIdFromToken()` when calling API with Bearer token.
+
+**Root causes (3 compounding issues)**:
+1. **Missing autoloader optimization** - `composer dump-autoload -o` not run after container start
+2. **Team ID = 0 in database** - Personal access tokens had `team_id: 0` and `tokenable_id: 0` (invalid foreign keys)
+3. **Token format** - Client must send `id|plaintext_token` (e.g. `8|cp_abc...`), not just plaintext
+
+**Fix applied**:
+```bash
+# In coolify container:
+php artisan optimize:clear
+composer dump-autoload -o
+
+# Fix database:
+# - Delete team_id=0, create team_id=1
+# - Update all foreign keys from team_id=0 → 1
+# - Create new personal access token with correct tokenable_id=1, team_id=1
+# - Use format: {token_id}|{plain_text_token} in Authorization header
+```
+
+### .env variables persisted in Coolify DB
+All 25 environment variables from `/data/coolify/applications/flofb07yh5gfcgxhw0ko0m1j/.env` now stored in Coolify's database via API:
+- **Secrets**: JWT_SECRET, Cloudflare R2 (account_id, access_key, secret_key, bucket, url, region)
+- **Social auth**: Facebook (app_id, secret), Instagram (app_id, secret)
+- **Runtime config**: HOST=0.0.0.0, STORAGE_PROVIDER=cloudflare
+- **Service discovery**: SERVICE_URL_*, SERVICE_NAME_*
+
+**Method**: `PATCH /api/v1/applications/{uuid}/envs/bulk` with `data` array of `{key, value, is_runtime: true, ...}`
+
+**Result**: Variables survive fresh Coolify deployments; no manual `.env` file needed.
