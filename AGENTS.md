@@ -22,6 +22,25 @@ make infra            # docker compose -f docker-compose.dev.yaml up -d
 make clean            # docker compose down
 ```
 
+## Git workflow
+
+Branch protection activo en `main`:
+- No push directo — siempre vía PR
+- Status check `Build & Push Images` debe pasar para mergear
+- `required_approving_review_count=0` — no requiere reviewer (solo-dev)
+- `enforce_admins=true` — aplica incluso al owner
+
+Flujo:
+```bash
+git checkout -b feat/mi-cambio
+git add .
+git commit -m "feat: descripcion"
+git push -u origin feat/mi-cambio
+# GH UI: crear PR → esperar CI verde → Merge pull request
+```
+
+Al mergear se dispara `build-push.yml` que deploya al VPS automáticamente.
+
 ## Architecture
 
 - **Monorepo** — pnpm workspaces: `apps/*`, `libraries/*`, `landing`
@@ -126,13 +145,19 @@ All apps load root `.env` explicitly: `dotenv -e ../../.env`. No auto-detection.
 
 El CI/CD build-push.yml hace:
 1. Build + push a GHCR (dos jobs paralelos: postiz, landing)
-2. Deploy via SSH al VPS: `pull → up -d --no-deps → healthcheck loop → restart coolify-proxy → verify endpoints`
+2. Deploy via SSH al VPS: `pull → up -d --no-deps → healthcheck loop → fix routers.yaml → restart coolify-proxy → verify endpoints (3 reintentos)`
+
+### Cambios en CI/CD (2026-07-14)
+
+- **known_hosts dinámico**: Ya no usa clave ECDSA hardcodeada. El deploy job ejecuta `ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts` para obtener la host key automáticamente.
+- **Image pinning**: El deploy job ahora ejecuta `sed` sobre el docker-compose.yaml del VPS para reemplazar `:latest` con `:${{ github.sha }}` antes de hacer `pull` y `up -d`. Esto hace que cada deploy quede pineado a una imagen específica.
 
 ### Errores conocidos
 
 - **`Error response from daemon: No such container`** — no usar `--wait` en `docker compose up -d`. Docker Compose referencea container IDs viejos que ya no existen. Usar loop manual de healthcheck con `docker ps -q -f "label=com.docker.compose.service=..."`.
 - **Los nombres de container cambian en cada recreate** — el sufijo numérico (e.g. `-022131340838`) varía. Usar labels (`com.docker.compose.service`) para identificar containers, no nombres estáticos.
 - **Traefik no refresca rutas automáticamente** — siempre ejecutar `docker restart coolify-proxy` al final del deploy. Docker provider no siempre actualiza routers cuando cambia el container ID.
+- **Coolify sobreescribe `routers.yaml`** — el CI/CD verifica y corrige automáticamente si Coolify regenera el archivo con el nombre viejo `postiz-api`.
 
 ### Healthcheck loop
 
@@ -145,25 +170,65 @@ docker inspect --format '{{.State.Health.Status}}' "$POSTIZ_ID"
 ### Entries to never add
 - **No agregar `miposting.com` al `certificates.yaml`** — el landing obtiene su cert vía ACME automático de Traefik. Agregar una entrada file-based rompe todo el ruteo HTTPS.
 - **No usar `certResolver=letsencrypt` en labels de router** — usar `tls=true` para que Traefik matchee con file-based certs.
+- **No agregar `STORAGE_PROVIDER` o `UPLOAD_DIRECTORY`** — el contenedor usa Cloudflare R2, no storage local.
 
-## SSL / Traefik issues fixed (2026-07-13)
+## Security
 
-### Root causes found
-1. **Empty cert dir** `/data/coolify/proxy/certs/miposting.com/` caused Traefik "no PEM data" errors
-2. **Bogus Coolify labels** `Host(``) && PathPrefix(...)` on HTTP entrypoint blocked valid HTTPS routers
-3. **File provider TLS not loading** via `certificates.yaml` alone for Docker routers
+### Secret Scanning + Push Protection
+Activado vía GitHub API. Bloquea commits que contengan credenciales/tokens.
 
-### Solution implemented
-**File-provider explicit routers** in `/data/coolify/proxy/dynamic/routers.yaml`:
+### Branch Protection (main)
+- Status check requerido: `Build & Push Images`
+- `required_approving_review_count=0` (solo-dev)
+- `dismiss_stale_reviews=true`, `require_last_push_approval=true`
+- `enforce_admins=true`
+- Force push y deletions: deshabilitados
+
+### Action pinning (SHA)
+Todas las GitHub Actions en `.github/workflows/*` están pineadas por SHA commit en vez de tags semver (`@v4` → `@34e114... # v4`). 28 actions en 8 workflows.
+
+Para actualizar una action:
+```bash
+gh api repos/{owner}/{repo}/git/refs/tags/{tag} --jq '.object.sha'
+```
+
+### Fork PR defense
+- `default_workflow_permissions=read` — workflows de forks solo lectura
+- `can_approve_pull_request_reviews=false` — workflows no pueden aprobar PRs
+
+### Dependabot
+- Alertas + security updates: activados
+- `.github/dependabot.yml`: npm (grouped patches), docker, github-actions
+- Schedule: lunes 9am AST
+
+## SSL / Traefik (2026-07-14 — definitivo)
+
+### Arquitectura de routing
+
+```
+Browser → Traefik:443 → postiz:5000 (nginx) → localhost:4200 (frontend Next.js)
+                                             → localhost:3000 (backend NestJS)
+Browser → Traefik:443 → postiz-landing:80 (Next.js estático)
+```
+
+### Providers de routing (IMPORTANTE: conflicto resuelto)
+
+Coolify genera **dos providers** de Traefik:
+1. **Docker provider** — crea routers desde labels del compose (nombre: `postiz`, `landing`, prioridad: 100)
+2. **File provider** — carga `/data/coolify/proxy/dynamic/routers.yaml` (nombre: `postiz-app`, `landing-web`)
+
+**Regla**: Docker provider tiene prioridad. File-provider es fallback (priority: 1).
+
+### Configuración actual de `/data/coolify/proxy/dynamic/routers.yaml`
 ```yaml
 http:
   routers:
-    postiz-api:
+    postiz-app:          # ← fallback (priority 1)
       rule: "Host(`app.miposting.com`)"
       entryPoints: [https]
-      service: postiz-api
+      service: postiz-app
       tls: true
-      priority: 100
+      priority: 1        # ← prioridad baja (fallback)
     landing-web:
       rule: "Host(`miposting.com`)"
       entryPoints: [https]
@@ -171,7 +236,7 @@ http:
       tls: true
       priority: 100
   services:
-    postiz-api:
+    postiz-app:
       loadBalancer:
         servers: [{url: "http://postiz:5000"}]
         passHostHeader: true
@@ -184,17 +249,73 @@ http:
       compress: {}
 ```
 
-**Why this works:**
-- Bypasses Docker labels entirely for HTTPS routing
-- Uses Docker Compose service names (`postiz`, `postiz-landing`) for internal DNS
-- `certificates.yaml` provides file-based cert for `app.miposting.com`
-- `miposting.com` uses ACME auto-provisioned cert from `acme.json`
-- CI/CD `docker restart coolify-proxy` reloads file provider config automatically
+### Variables de entorno críticas (Postiz docs)
+| Variable | Valor | Notas |
+|---|---|---|
+| `FRONTEND_URL` | `https://app.miposting.com` | OAuth redirect base |
+| `NEXT_PUBLIC_BACKEND_URL` | `https://app.miposting.com/api` | URL del browser al backend |
+| `BACKEND_INTERNAL_URL` | `http://localhost:3000` | URL interna SSR→Backend |
+| `MAIN_URL` | `https://miposting.com` | URLs absolutas emails/SEO |
+| `IS_GENERAL` | `true` | Build open-source |
+| `RUN_CRON` | `true` | **Requerido** para scheduled posts |
+| `RESEND_API_KEY` | `re_...` | Transactional emails (Resend) |
+| `EMAIL_FROM_ADDRESS` | `noreply@miposting.com` | Remitente emails |
+| `EMAIL_FROM_NAME` | `Miposting` | Nombre del remitente |
+| `EMAIL_PROVIDER` | `resend` | **Obligatorio** — sin esto Postiz cae a `EmptyProvider` |
+
+### Solución definitiva al conflicto de routers (2026-07-14)
+**Problema**: Coolify creaba un router Docker `postiz` con `Host(\`app.miposting.com\`)` en entrypoint HTTPS, que competía con nuestro file-provider router `postiz-api` (misma regla, misma prioridad). Resultado: TLS handshake OK pero sin respuesta HTTP.
+
+**Fix**: File-provider router renombrado a `postiz-app` con `priority: 1` (fallback). Docker provider (priority 100) tiene prioridad.
+
+**CI/CD ahora verifica**:
+1. Que `routers.yaml` no tenga el nombre viejo `postiz-api`
+2. Que `postiz-app` tenga `priority: 1`
+3. Reintenta verificación de endpoints 3 veces con 5s de espera
+
+### Monitoreo implementado
+
+| Script | Trigger | Qué hace |
+|---|---|---|
+| `/usr/local/bin/miposting-healthcheck.sh` | cron cada 5 min | Verifica endpoints, restart Traefik si falla 3 veces |
+| `/usr/local/bin/miposting-recovery.sh` | systemd timer (2 min post-reboot) | Verifica sshd, Docker, Traefik, containers, routers.yaml |
+| `/usr/local/bin/coolify-ssh-backup.sh` | cron diario 3am | Verifica SSH key de Coolify existe y está en DB |
+
+### Errores conocidos
+- **Coolify Docker labels bogus**: `Host(\`\`) && PathPrefix(...)` en HTTP entrypoint. Causa errores en logs pero no rompe HTTPS. Solución: file-provider routers.
+- **Traefik estado corrupto post-reboot**: `docker restart coolify-proxy` lo resuelve.
+- **`miposting.com` gateway timeout**: Traefik acumula estado interno corrupto. Solución: restart.
 
 ### Remaining items
-- [ ] Coolify API autoloader bug (`Class "App\Models\User" not found`) - only affects API deploys
-- [ ] `.env` persistence in Coolify UI - manually placed at `/data/coolify/applications/flofb07yh5gfcgxhw0ko0m1j/.env`
-- [ ] Terminate AWS EC2 `18.218.99.94` (pending confirmation)
+- [ ] Coolify API autoloader bug (`Class "App\Models\User" not found`) - solo afecta API deploys
+- [ ] Terminate AWS EC2 `18.218.99.94` (pendiente confirmación)
+- [ ] Fork PR approval toggle en Settings > Actions > General (UI manual)
+- [ ] `dev` user sudo NOPASSWD para CI/CD automation
+- [ ] pin-action script (`make pin-action`) opcional
+
+### Items completados (2026-07-14)
+
+| Ítem | Estado |
+|------|--------|
+| 1. Recrear postiz para RUN_CRON | ✅ |
+| 2. depends_on condition: service_healthy en postiz→temporal | ✅ |
+| 3. Healthchecks en temporal, temporal-postgresql, temporal-elasticsearch | ✅ |
+| 4. temporal-ui agregado | ✅ |
+| 5. CORS Cloudflare R2 verificado | ✅ |
+| 6. HOST=0.0.0.0 eliminado de Coolify DB | ✅ |
+| 7. NEXT_PUBLIC_VERSION en CI/CD | ✅ |
+| 8. known_hosts dinámico con ssh-keyscan | ✅ |
+| 9. Image tags pineados con commit SHA | ✅ |
+| 10. Secret Scanning + Push Protection | ✅ |
+| 11. Branch Protection (main) | ✅ |
+| 12. Action pinning por SHA (28 actions, 8 workflows) | ✅ |
+| 13. Fork PR defense | ✅ |
+| 14. Dependabot alerts + dependabot.yml | ✅ |
+| 15. Resend env vars (API key, from, provider) | ✅ |
+| 16. Coolify FQDN (coolify.insiterd.com) | ✅ |
+| 17. SSH hardening (no root, no password) | ✅ |
+| 18. iptables DOCKER-USER (bloqueo 8081,6001,6002) | ✅ |
+| 19. Port 8000 bloqueado (raw PREROUTING) | ✅ |
 
 ## Coolify API & .env persistence (2026-07-13)
 
