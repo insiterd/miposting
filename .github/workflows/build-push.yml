@@ -19,20 +19,20 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - name: Login to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push postiz
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: Dockerfile
@@ -40,6 +40,8 @@ jobs:
           tags: |
             ${{ env.POSTIZ_IMAGE }}:${{ github.sha }}
             ${{ env.POSTIZ_IMAGE }}:latest
+          build-args: |
+            NEXT_PUBLIC_VERSION=${{ github.sha }}
           cache-from: type=registry,ref=${{ env.POSTIZ_IMAGE }}:cache
           cache-to: type=registry,ref=${{ env.POSTIZ_IMAGE }}:cache,mode=max
 
@@ -49,20 +51,20 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - name: Login to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push landing
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: landing/Dockerfile
@@ -78,16 +80,22 @@ jobs:
     needs: [build-postiz, build-landing]
     steps:
       - name: Install SSH key
-        uses: shimataro/ssh-key-action@v2
+        uses: shimataro/ssh-key-action@87a8f067114a8ce263df83e9ed5c849953548bc3 # v2.8.1
         with:
           key: ${{ secrets.VPS_SSH_KEY }}
-          known_hosts: ${{ secrets.VPS_HOST }} ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBDhbWsLELGgA9ZzI81PhOhklJh4quXSRbjKmRWGGL8ORlx1JkeK0FNgR/ff4NRFhG1sWSXwcpTKVAJH+z60isgg=
+
+      - name: Add VPS to known_hosts
+        run: ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
       - name: Pull latest images and restart
         run: |
           ssh root@${{ secrets.VPS_HOST }} "
             set -e
             COMPOSE_FILE='/data/coolify/applications/flofb07yh5gfcgxhw0ko0m1j/docker-compose.yaml'
+
+            echo '=== Pinning images to ${{ github.sha }} ==='
+            sed -i 's|ghcr.io/insiterd/miposting-postiz:latest|ghcr.io/insiterd/miposting-postiz:${{ github.sha }}|g' \"\$COMPOSE_FILE\"
+            sed -i 's|ghcr.io/insiterd/miposting-landing:latest|ghcr.io/insiterd/miposting-landing:${{ github.sha }}|g' \"\$COMPOSE_FILE\"
 
             echo '=== Pulling new images ==='
             docker compose -f \"\$COMPOSE_FILE\" pull postiz postiz-landing
@@ -109,13 +117,86 @@ jobs:
               sleep 3
             done
 
+            echo '=== Verifying routers.yaml integrity ==='
+            ROUTERS_FILE='/data/coolify/proxy/dynamic/routers.yaml'
+            if [ -f \"\$ROUTERS_FILE\" ]; then
+              if grep -q 'postiz-api:' \"\$ROUTERS_FILE\"; then
+                echo 'WARNING: routers.yaml has old postiz-api router name, fixing...'
+                sed -i 's/postiz-api:/postiz-app:/g' \"\$ROUTERS_FILE\"
+                sed -i 's/service: postiz-api/service: postiz-app/g' \"\$ROUTERS_FILE\"
+              fi
+              if ! grep -q 'priority: 1' \"\$ROUTERS_FILE\"; then
+                echo 'WARNING: routers.yaml missing low priority for postiz-app, fixing...'
+                sed -i '/rule:.*app.miposting.com/,/middlewares:/s/priority: 100/priority: 1/' \"\$ROUTERS_FILE\"
+              fi
+              echo 'routers.yaml OK'
+            else
+              echo 'WARNING: routers.yaml missing, creating...'
+              cat > \"\$ROUTERS_FILE\" << 'YAML'
+          http:
+            routers:
+              postiz-app:
+                rule: \"Host(\\\`app.miposting.com\\\`)\"
+                entryPoints:
+                  - https
+                service: postiz-app
+                tls: true
+                priority: 1
+                middlewares:
+                  - gzip
+              landing-web:
+                rule: \"Host(\\\`miposting.com\\\`)\"
+                entryPoints:
+                  - https
+                service: landing-web
+                tls: true
+                priority: 100
+                middlewares:
+                  - gzip
+            services:
+              postiz-app:
+                loadBalancer:
+                  servers:
+                    - url: \"http://postiz:5000\"
+                  passHostHeader: true
+              landing-web:
+                loadBalancer:
+                  servers:
+                    - url: \"http://postiz-landing:80\"
+                  passHostHeader: true
+            middlewares:
+              gzip:
+                compress: {}
+          YAML
+            fi
+
             echo '=== Refreshing Traefik routes ==='
             docker restart coolify-proxy || true
 
-            echo '=== Verifying endpoints ==='
+            echo '=== Verifying endpoints (with retries) ==='
             sleep 5
-            curl -sfI --max-time 10 'https://app.miposting.com/api/health' && echo 'API OK'
-            curl -sfI --max-time 10 'https://miposting.com/' && echo 'Landing OK'
+            for i in 1 2 3; do
+              API_OK=false
+              LANDING_OK=false
+              FRONTEND_OK=false
+
+              curl -sfI --max-time 10 'https://app.miposting.com/api/health' && API_OK=true
+              curl -sfI --max-time 10 'https://miposting.com/' && LANDING_OK=true
+              curl -sfI --max-time 10 'https://app.miposting.com/auth' && FRONTEND_OK=true
+
+              if [ \"\$API_OK\" = true ] && [ \"\$LANDING_OK\" = true ] && [ \"\$FRONTEND_OK\" = true ]; then
+                echo 'All endpoints verified on attempt $i'
+                break
+              fi
+
+              echo \"Attempt \$i failed (API:\$API_OK, Landing:\$LANDING_OK, Frontend:\$FRONTEND_OK), retrying in 5s...\"
+              sleep 5
+
+              if [ \"\$i\" = '3' ]; then
+                echo 'ERROR: Endpoints failed after 3 attempts'
+                exit 1
+              fi
+            done
 
             echo '=== Deploy complete ==='
           "
