@@ -26,9 +26,9 @@ make clean            # docker compose down
 
 Branch protection activo en `main`:
 - No push directo — siempre vía PR
-- Status check `Build & Push Images` debe pasar para mergear
 - `required_approving_review_count=0` — no requiere reviewer (solo-dev)
 - `enforce_admins=true` — aplica incluso al owner
+- Status checks no requeridos (el CI corre al mergear a main, no como gate en PR)
 
 Flujo:
 ```bash
@@ -178,11 +178,11 @@ docker inspect --format '{{.State.Health.Status}}' "$POSTIZ_ID"
 Activado vía GitHub API. Bloquea commits que contengan credenciales/tokens.
 
 ### Branch Protection (main)
-- Status check requerido: `Build & Push Images`
 - `required_approving_review_count=0` (solo-dev)
-- `dismiss_stale_reviews=true`, `require_last_push_approval=true`
+- `dismiss_stale_reviews=true`
 - `enforce_admins=true`
 - Force push y deletions: deshabilitados
+- Status checks no requeridos (el workflow `build-push.yml` solo corre en push a main, no en PRs)
 
 ### Action pinning (SHA)
 Todas las GitHub Actions en `.github/workflows/*` están pineadas por SHA commit en vez de tags semver (`@v4` → `@34e114... # v4`). 28 actions en 8 workflows.
