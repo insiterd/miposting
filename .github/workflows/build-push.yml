@@ -139,9 +139,16 @@ jobs:
                 sudo sed -i 's/postiz-api:/postiz-app:/g' \"\$ROUTERS_FILE\"
                 sudo sed -i 's/service: postiz-api/service: postiz-app/g' \"\$ROUTERS_FILE\"
               fi
-              if ! grep -q 'priority: 1' \"\$ROUTERS_FILE\"; then
-                echo 'WARNING: routers.yaml missing low priority for postiz-app, fixing...'
-                sudo sed -i '/rule:.*app.miposting.com/,/middlewares:/s/priority: 100/priority: 1/' \"\$ROUTERS_FILE\"
+              if ! grep -q 'certResolver' \"\$ROUTERS_FILE\"; then
+                echo 'FIX: adding certResolver: letsencrypt + priority: 101 to file routers...'
+                sudo sed -i '/^    postiz-app:/,/    landing-web:/{
+                  /tls: true/s/tls: true/tls:\n          certResolver: letsencrypt/
+                }' \"\$ROUTERS_FILE\"
+                sudo sed -i '/^    landing-web:/,/    middlewares:/{
+                  /tls: true/s/tls: true/tls:\n          certResolver: letsencrypt/
+                }' \"\$ROUTERS_FILE\"
+                sudo sed -i '/^    postiz-app:/,/    middlewares:/s/priority: [0-9]*/priority: 101/' \"\$ROUTERS_FILE\"
+                sudo sed -i '/^    landing-web:/,/    middlewares:/s/priority: [0-9]*/priority: 101/' \"\$ROUTERS_FILE\"
               fi
               echo 'routers.yaml OK'
             else
@@ -154,8 +161,9 @@ jobs:
                 entryPoints:
                   - https
                 service: postiz-app
-                tls: true
-                priority: 1
+                tls:
+                  certResolver: letsencrypt
+                priority: 101
                 middlewares:
                   - gzip
               landing-web:
@@ -163,8 +171,9 @@ jobs:
                 entryPoints:
                   - https
                 service: landing-web
-                tls: true
-                priority: 100
+                tls:
+                  certResolver: letsencrypt
+                priority: 101
                 middlewares:
                   - gzip
             services:
