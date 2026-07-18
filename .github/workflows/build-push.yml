@@ -119,6 +119,18 @@ jobs:
               sleep 3
             done
 
+            echo '=== Waiting for NestJS backend to be ready... ==='
+            POSTIZ_CONTAINER=\$(docker ps -q -f 'label=com.docker.compose.service=postiz')
+            for i in \$(seq 1 12); do
+              BACKEND_OK=\$(docker exec \"\$POSTIZ_CONTAINER\" curl -sf --max-time 3 http://127.0.0.1:5000/api/health 2>/dev/null && echo 'ok' || echo 'no')
+              if [ \"\$BACKEND_OK\" = 'ok' ]; then
+                echo 'Backend ready!'
+                break
+              fi
+              echo \"  backend attempt \$i/12\"
+              sleep 5
+            done
+
             echo '=== Verifying routers.yaml integrity ==='
             ROUTERS_FILE='/data/coolify/proxy/dynamic/routers.yaml'
             if [ -f \"\$ROUTERS_FILE\" ]; then
@@ -176,7 +188,7 @@ jobs:
             docker restart coolify-proxy || true
 
             echo '=== Verifying endpoints (with retries) ==='
-            sleep 15
+            sleep 5
             for i in 1 2 3 4 5; do
               API_OK=false
               LANDING_OK=false
