@@ -99,6 +99,11 @@ jobs:
             sudo sed -i 's|ghcr.io/insiterd/miposting-postiz:latest|ghcr.io/insiterd/miposting-postiz:${{ github.sha }}|g' \"\$COMPOSE_FILE\"
             sudo sed -i 's|ghcr.io/insiterd/miposting-landing:latest|ghcr.io/insiterd/miposting-landing:${{ github.sha }}|g' \"\$COMPOSE_FILE\"
 
+            echo '=== Adding certResolver to Docker router labels ==='
+            if ! grep -q 'tls.certResolver' \"\$COMPOSE_FILE\"; then
+              sudo sed -i '/traefik.http.routers.postiz.tls=true$/a\            - traefik.http.routers.postiz.tls.certResolver=letsencrypt' \"\$COMPOSE_FILE\"
+            fi
+
             echo '=== Pulling new images ==='
             docker compose -f \"\$COMPOSE_FILE\" pull postiz postiz-landing
 
@@ -198,7 +203,7 @@ jobs:
 
             echo '=== Verifying endpoints (with retries) ==='
             sleep 5
-            for i in 1 2 3 4 5; do
+            for i in \$(seq 1 12); do
               API_OK=false
               LANDING_OK=false
               FRONTEND_OK=false
@@ -215,7 +220,7 @@ jobs:
               echo \"Attempt \$i failed (API:\$API_OK, Landing:\$LANDING_OK, Frontend:\$FRONTEND_OK), retrying in 5s...\"
               sleep 5
 
-              if [ \"\$i\" = '5' ]; then
+              if [ \"\$i\" = '12' ]; then
                 echo 'ERROR: Endpoints failed after 5 attempts'
                 exit 1
               fi
