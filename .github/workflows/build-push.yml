@@ -176,8 +176,8 @@ jobs:
             docker restart coolify-proxy || true
 
             echo '=== Verifying endpoints (with retries) ==='
-            sleep 5
-            for i in 1 2 3; do
+            sleep 15
+            for i in 1 2 3 4 5; do
               API_OK=false
               LANDING_OK=false
               FRONTEND_OK=false
@@ -194,8 +194,8 @@ jobs:
               echo \"Attempt \$i failed (API:\$API_OK, Landing:\$LANDING_OK, Frontend:\$FRONTEND_OK), retrying in 5s...\"
               sleep 5
 
-              if [ \"\$i\" = '3' ]; then
-                echo 'ERROR: Endpoints failed after 3 attempts'
+              if [ \"\$i\" = '5' ]; then
+                echo 'ERROR: Endpoints failed after 5 attempts'
                 exit 1
               fi
             done
