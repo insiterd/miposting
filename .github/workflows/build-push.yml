@@ -92,9 +92,12 @@ jobs:
             set -e
             COMPOSE_FILE='/data/coolify/applications/flofb07yh5gfcgxhw0ko0m1j/docker-compose.yaml'
 
+            echo '=== Validando acceso a Docker socket ==='
+            docker info > /dev/null 2>&1 || { echo 'Error: dev no tiene acceso a Docker socket'; exit 1; }
+
             echo '=== Pinning images to ${{ github.sha }} ==='
-            sed -i 's|ghcr.io/insiterd/miposting-postiz:latest|ghcr.io/insiterd/miposting-postiz:${{ github.sha }}|g' \"\$COMPOSE_FILE\"
-            sed -i 's|ghcr.io/insiterd/miposting-landing:latest|ghcr.io/insiterd/miposting-landing:${{ github.sha }}|g' \"\$COMPOSE_FILE\"
+            sudo sed -i 's|ghcr.io/insiterd/miposting-postiz:latest|ghcr.io/insiterd/miposting-postiz:${{ github.sha }}|g' \"\$COMPOSE_FILE\"
+            sudo sed -i 's|ghcr.io/insiterd/miposting-landing:latest|ghcr.io/insiterd/miposting-landing:${{ github.sha }}|g' \"\$COMPOSE_FILE\"
 
             echo '=== Pulling new images ==='
             docker compose -f \"\$COMPOSE_FILE\" pull postiz postiz-landing
@@ -121,21 +124,21 @@ jobs:
             if [ -f \"\$ROUTERS_FILE\" ]; then
               if grep -q 'postiz-api:' \"\$ROUTERS_FILE\"; then
                 echo 'WARNING: routers.yaml has old postiz-api router name, fixing...'
-                sed -i 's/postiz-api:/postiz-app:/g' \"\$ROUTERS_FILE\"
-                sed -i 's/service: postiz-api/service: postiz-app/g' \"\$ROUTERS_FILE\"
+                sudo sed -i 's/postiz-api:/postiz-app:/g' \"\$ROUTERS_FILE\"
+                sudo sed -i 's/service: postiz-api/service: postiz-app/g' \"\$ROUTERS_FILE\"
               fi
               if ! grep -q 'priority: 1' \"\$ROUTERS_FILE\"; then
                 echo 'WARNING: routers.yaml missing low priority for postiz-app, fixing...'
-                sed -i '/rule:.*app.miposting.com/,/middlewares:/s/priority: 100/priority: 1/' \"\$ROUTERS_FILE\"
+                sudo sed -i '/rule:.*app.miposting.com/,/middlewares:/s/priority: 100/priority: 1/' \"\$ROUTERS_FILE\"
               fi
               echo 'routers.yaml OK'
             else
               echo 'WARNING: routers.yaml missing, creating...'
-              cat > \"\$ROUTERS_FILE\" << 'YAML'
+              cat << 'YAML' | sudo tee \"\$ROUTERS_FILE\" > /dev/null
           http:
             routers:
               postiz-app:
-                rule: \"Host(\\\`app.miposting.com\\\`)\"
+                rule: "Host(\`app.miposting.com\`)"
                 entryPoints:
                   - https
                 service: postiz-app
@@ -144,7 +147,7 @@ jobs:
                 middlewares:
                   - gzip
               landing-web:
-                rule: \"Host(\\\`miposting.com\\\`)\"
+                rule: "Host(\`miposting.com\`)"
                 entryPoints:
                   - https
                 service: landing-web
@@ -156,12 +159,12 @@ jobs:
               postiz-app:
                 loadBalancer:
                   servers:
-                    - url: \"http://postiz:5000\"
+                    - url: "http://postiz:5000"
                   passHostHeader: true
               landing-web:
                 loadBalancer:
                   servers:
-                    - url: \"http://postiz-landing:80\"
+                    - url: "http://postiz-landing:80"
                   passHostHeader: true
             middlewares:
               gzip:
