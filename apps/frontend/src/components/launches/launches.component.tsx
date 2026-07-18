@@ -327,13 +327,15 @@ export const MenuComponent: FC<
           : {})}
         role="Handle"
         className={clsx(
-          'group-[.sidebar]:hidden flex-1 min-w-0 whitespace-nowrap text-ellipsis overflow-hidden cursor-move text-[13px] leading-tight',
+'group-[.sidebar]:hidden flex-1 min-w-0 flex flex-col justify-center whitespace-nowrap text-ellipsis overflow-hidden cursor-move text-[13px] leading-tight pe-[4px]',
           integration.disabled && 'opacity-50'
         )}
       >
-        {integration.name}
+        <span className="whitespace-nowrap text-ellipsis overflow-hidden text-[13.5px] font-[500] leading-snug">
+          {integration.name}
+        </span>
       </div>
-      <div className="shrink-0 flex items-center">
+      <div className="shrink-0 flex items-center group-[.sidebar]:hidden">
         <Menu
           canChangeProfilePicture={integration.changeProfilePicture}
           canChangeNickName={integration.changeNickName}
