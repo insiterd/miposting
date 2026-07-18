@@ -197,7 +197,7 @@ jobs:
           YAML
 
           echo "=== Validando sintaxis YAML ==="
-          python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]))" "$ROUTERS_FILE" || { echo "FATAL: routers.yaml invalido — abortando"; exit 1; }
+          sudo sed -n "p" "$ROUTERS_FILE" | python3 -c "import yaml,sys; yaml.safe_load(sys.stdin)" || { echo "FATAL: routers.yaml invalido — abortando"; exit 1; }
           echo "YAML OK"
 
           echo "=== Refreshing Traefik routes ==="
