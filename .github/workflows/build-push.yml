@@ -122,7 +122,7 @@ jobs:
             echo '=== Waiting for NestJS backend to be ready... ==='
             POSTIZ_CONTAINER=\$(docker ps -q -f 'label=com.docker.compose.service=postiz')
             for i in \$(seq 1 12); do
-              BACKEND_OK=\$(docker exec \"\$POSTIZ_CONTAINER\" curl -sf --max-time 3 http://127.0.0.1:5000/api/health 2>/dev/null && echo 'ok' || echo 'no')
+              BACKEND_OK=\$(docker exec \"\$POSTIZ_CONTAINER\" bash -c 'timeout 3 cat < /dev/null > /dev/tcp/127.0.0.1/5000' 2>/dev/null && echo 'ok' || echo 'no')
               if [ \"\$BACKEND_OK\" = 'ok' ]; then
                 echo 'Backend ready!'
                 break
