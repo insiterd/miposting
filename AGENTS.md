@@ -145,10 +145,14 @@ All apps load root `.env` explicitly: `dotenv -e ../../.env`. No auto-detection.
 
 El CI/CD build-push.yml hace:
 1. Build + push a GHCR (dos jobs paralelos: postiz, landing)
-2. Deploy via SSH al VPS: `pull → up -d --no-deps → healthcheck loop → fix routers.yaml → restart coolify-proxy → verify endpoints (3 reintentos)`
+2. Deploy via SSH al VPS: `pull → up -d --no-deps → healthcheck loop → fix compose labels → fix routers.yaml → restart coolify-proxy → verify endpoints (12×5s)`
 
-### Cambios en CI/CD (2026-07-14)
+### Cambios en CI/CD (2026-07-18)
 
+- **Readiness check sin curl**: La imagen postiz no tiene curl. Se usa `bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/5000'` para verificar puerto interno.
+- **certResolver en Docker router**: `sudo sed` agrega `traefik.http.routers.postiz.tls.certResolver=letsencrypt` al compose. Sin esto, Traefik usa default cert (self-signed) aunque el ACME cert exista.
+- **File provider routers**: `routers.yaml` se crea/verifica con `tls.certResolver: letsencrypt` y `priority: 101` (override del Docker router priority 100).
+- **Reintentos aumentados**: Endpoint verification 5→12 intentos (60s) para dar tiempo a ACME post-restart.
 - **known_hosts dinámico**: Ya no usa clave ECDSA hardcodeada. El deploy job ejecuta `ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts` para obtener la host key automáticamente.
 - **Image pinning**: El deploy job ahora ejecuta `sed` sobre el docker-compose.yaml del VPS para reemplazar `:latest` con `:${{ github.sha }}` antes de hacer `pull` y `up -d`. Esto hace que cada deploy quede pineado a una imagen específica.
 
@@ -169,8 +173,12 @@ docker inspect --format '{{.State.Health.Status}}' "$POSTIZ_ID"
 
 ### Entries to never add
 - **No agregar `miposting.com` al `certificates.yaml`** — el landing obtiene su cert vía ACME automático de Traefik. Agregar una entrada file-based rompe todo el ruteo HTTPS.
-- **No usar `certResolver=letsencrypt` en labels de router** — usar `tls=true` para que Traefik matchee con file-based certs. (NOTA: usar certResolver SÍ en file provider, con priority > 100)
 - **No agregar `STORAGE_PROVIDER` o `UPLOAD_DIRECTORY`** — el contenedor usa Cloudflare R2, no storage local.
+
+### Notas SSL (2026-07-18)
+- **Siempre agregar `tls.certResolver=letsencrypt`** al Docker router `postiz` en compose. `tls=true` solo → Traefik sirve default cert self-signed, aunque el ACME cert exista en `acme.json`.
+- **File provider**: `tls.certResolver: letsencrypt` + `priority: 101` > Docker's 100. Ambos routers (Docker y file) deben tener certResolver.
+- CI/CD ahora agrega el label automáticamente vía `sudo sed` en cada deploy.
 
 ## Security
 
@@ -287,11 +295,11 @@ http:
 - **`miposting.com` gateway timeout**: Traefik acumula estado interno corrupto. Solución: restart.
 
 ### Remaining items
-- [ ] Coolify API autoloader bug (`Class "App\Models\User" not found`) - solo afecta API deploys
+- [ ] Coolify API autoloader bug — solo afecta API deploys
 - [ ] Terminate AWS EC2 `18.218.99.94` (pendiente confirmación)
 - [ ] Fork PR approval toggle en Settings > Actions > General (UI manual)
-- [ ] `dev` user sudo NOPASSWD para CI/CD automation
-- [ ] pin-action script (`make pin-action`) opcional
+- [ ] Configure Postiz PostgreSQL backup
+- [ ] Verify Google OAuth login with YOUTUBE_CLIENT_ID/YOUTUBE_CLIENT_SECRET
 
 ### Items completados (2026-07-14)
 
@@ -316,6 +324,11 @@ http:
 | 17. SSH hardening (no root, no password) | ✅ |
 | 18. iptables DOCKER-USER (bloqueo 8081,6001,6002) | ✅ |
 | 19. Port 8000 bloqueado (raw PREROUTING) | ✅ |
+| 20. Readiness check con /dev/tcp (PR10) | ✅ |
+| 21. certResolver en file provider + priority 101 (PR11) | ✅ |
+| 22. certResolver label en Docker router (PR12) | ✅ |
+| 23. CI/CD verde — endpoint verification pasa | ✅ |
+| 24. SSL Let's Encrypt para app.miposting.com | ✅ |
 
 ## Coolify API & .env persistence (2026-07-13)
 
