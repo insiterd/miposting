@@ -32,7 +32,7 @@ export const PicksSocialsComponent: FC<{ toolTip?: boolean }> = ({
     <div className={clsx('flex', locked && 'opacity-50 pointer-events-none')}>
       <div className="flex flex-1">
         <div className="innerComponent flex-1 flex">
-          <div className="flex flex-wrap gap-[12px] flex-1">
+          <div className="flex flex-nowrap gap-[12px] flex-1 overflow-x-auto scrollbar-thin scrollbar-thumb-newColColor scrollbar-track-transparent">
             {integrations
               .filter((f) => {
                 if (exising.integration) {
