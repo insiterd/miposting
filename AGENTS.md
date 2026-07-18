@@ -169,7 +169,7 @@ docker inspect --format '{{.State.Health.Status}}' "$POSTIZ_ID"
 
 ### Entries to never add
 - **No agregar `miposting.com` al `certificates.yaml`** — el landing obtiene su cert vía ACME automático de Traefik. Agregar una entrada file-based rompe todo el ruteo HTTPS.
-- **No usar `certResolver=letsencrypt` en labels de router** — usar `tls=true` para que Traefik matchee con file-based certs.
+- **No usar `certResolver=letsencrypt` en labels de router** — usar `tls=true` para que Traefik matchee con file-based certs. (NOTA: usar certResolver SÍ en file provider, con priority > 100)
 - **No agregar `STORAGE_PROVIDER` o `UPLOAD_DIRECTORY`** — el contenedor usa Cloudflare R2, no storage local.
 
 ## Security
