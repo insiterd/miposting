@@ -5,6 +5,10 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - 'LICENSE'
   workflow_dispatch:
 
 env:
@@ -96,8 +100,8 @@ jobs:
             docker info > /dev/null 2>&1 || { echo 'Error: dev no tiene acceso a Docker socket'; exit 1; }
 
             echo '=== Pinning images to ${{ github.sha }} ==='
-            sudo sed -i 's|ghcr.io/insiterd/miposting-postiz:latest|ghcr.io/insiterd/miposting-postiz:${{ github.sha }}|g' \"\$COMPOSE_FILE\"
-            sudo sed -i 's|ghcr.io/insiterd/miposting-landing:latest|ghcr.io/insiterd/miposting-landing:${{ github.sha }}|g' \"\$COMPOSE_FILE\"
+            sudo sed -i -E 's|(ghcr.io/insiterd/miposting-postiz):[a-zA-Z0-9_.-]+|\1:${{ github.sha }}|g' \"\$COMPOSE_FILE\"
+            sudo sed -i -E 's|(ghcr.io/insiterd/miposting-landing):[a-zA-Z0-9_.-]+|\1:${{ github.sha }}|g' \"\$COMPOSE_FILE\"
 
             echo '=== Adding certResolver to Docker router labels ==='
             if ! grep -q 'tls.certResolver' \"\$COMPOSE_FILE\"; then
@@ -200,9 +204,9 @@ jobs:
 
             echo '=== Refreshing Traefik routes ==='
             docker restart coolify-proxy || true
+            sleep 5
 
             echo '=== Verifying endpoints (with retries) ==='
-            sleep 5
             for i in \$(seq 1 12); do
               API_OK=false
               LANDING_OK=false
