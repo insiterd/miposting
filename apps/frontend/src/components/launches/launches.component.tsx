@@ -260,13 +260,13 @@ export const MenuComponent: FC<
           }
         : {})}
       className={clsx(
-        'flex gap-[12px] items-center bg-newBgColorInner hover:bg-boxHover group/profile transition-all rounded-e-[8px]',
+        'flex gap-[10px] items-center bg-newBgColorInner hover:bg-boxHover group/profile transition-all rounded-e-[8px] min-w-0 py-[6px]',
         integration.refreshNeeded && 'cursor-pointer'
       )}
     >
       <div
         className={clsx(
-          'relative gap-[6px] flex justify-center items-center',
+          'relative gap-[6px] flex justify-center items-center shrink-0',
           integration.disabled && 'opacity-50'
         )}
       >
@@ -291,10 +291,10 @@ export const MenuComponent: FC<
         <ImageWithFallback
           fallbackSrc={'/no-picture.jpg'}
           src={integration.picture || '/no-picture.jpg'}
-          className="rounded-[8px] min-w-[36px] min-h-[36px]"
+          className="rounded-[8px] w-[34px] h-[34px] min-w-[34px] min-h-[34px]"
           alt={integration.identifier}
-          width={36}
-          height={36}
+          width={34}
+          height={34}
         />
         {integration.identifier === 'youtube' ? (
           <img
@@ -327,25 +327,27 @@ export const MenuComponent: FC<
           : {})}
         role="Handle"
         className={clsx(
-          'group-[.sidebar]:hidden flex-1 whitespace-nowrap text-ellipsis overflow-hidden cursor-move',
+          'group-[.sidebar]:hidden flex-1 min-w-0 whitespace-nowrap text-ellipsis overflow-hidden cursor-move text-[13px] leading-tight',
           integration.disabled && 'opacity-50'
         )}
       >
         {integration.name}
       </div>
-      <Menu
-        canChangeProfilePicture={integration.changeProfilePicture}
-        canChangeNickName={integration.changeNickName}
-        refreshChannel={refreshChannel}
-        mutate={mutate}
-        onChange={update}
-        id={integration.id}
-        canEnable={
-          user?.totalChannels! > totalNonDisabledChannels &&
-          integration.disabled
-        }
-        canDisable={!integration.disabled}
-      />
+      <div className="shrink-0 flex items-center">
+        <Menu
+          canChangeProfilePicture={integration.changeProfilePicture}
+          canChangeNickName={integration.changeNickName}
+          refreshChannel={refreshChannel}
+          mutate={mutate}
+          onChange={update}
+          id={integration.id}
+          canEnable={
+            user?.totalChannels! > totalNonDisabledChannels &&
+            integration.disabled
+          }
+          canDisable={!integration.disabled}
+        />
+      </div>
     </div>
   );
 };
