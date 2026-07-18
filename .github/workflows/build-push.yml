@@ -88,7 +88,7 @@ jobs:
 
       - name: Pull latest images and restart
         run: |
-          ssh root@${{ secrets.VPS_HOST }} "
+          ssh dev@${{ secrets.VPS_HOST }} "
             set -e
             COMPOSE_FILE='/data/coolify/applications/flofb07yh5gfcgxhw0ko0m1j/docker-compose.yaml'
 
