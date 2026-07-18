@@ -138,7 +138,7 @@ jobs:
           http:
             routers:
               postiz-app:
-                rule: "Host(\`app.miposting.com\`)"
+                rule: \"Host(\\\`app.miposting.com\\\`)\"
                 entryPoints:
                   - https
                 service: postiz-app
@@ -147,7 +147,7 @@ jobs:
                 middlewares:
                   - gzip
               landing-web:
-                rule: "Host(\`miposting.com\`)"
+                rule: \"Host(\\\`miposting.com\\\`)\"
                 entryPoints:
                   - https
                 service: landing-web
@@ -159,12 +159,12 @@ jobs:
               postiz-app:
                 loadBalancer:
                   servers:
-                    - url: "http://postiz:5000"
+                    - url: \"http://postiz:5000\"
                   passHostHeader: true
               landing-web:
                 loadBalancer:
                   servers:
-                    - url: "http://postiz-landing:80"
+                    - url: \"http://postiz-landing:80\"
                   passHostHeader: true
             middlewares:
               gzip:
