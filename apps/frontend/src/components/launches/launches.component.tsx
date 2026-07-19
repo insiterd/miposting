@@ -291,8 +291,8 @@ export const MenuComponent: FC<
         <ImageWithFallback
           fallbackSrc={'/no-picture.jpg'}
           src={integration.picture || '/no-picture.jpg'}
-          className="rounded-[8px] w-[34px] h-[34px] min-w-[34px] min-h-[34px]"
-          alt={integration.identifier}
+          className="rounded-[8px] w-[34px] h-[34px] min-w-[34px] min-h-[34px] text-transparent object-cover select-none"
+          alt=""
           width={34}
           height={34}
         />
@@ -327,7 +327,7 @@ export const MenuComponent: FC<
           : {})}
         role="Handle"
         className={clsx(
-'group-[.sidebar]:hidden flex-1 min-w-0 flex flex-col justify-center whitespace-nowrap text-ellipsis overflow-hidden cursor-move text-[13px] leading-tight pe-[4px]',
+          'group-[.sidebar]:hidden flex-1 min-w-0 flex flex-col justify-center whitespace-nowrap text-ellipsis overflow-hidden cursor-move text-[13px] leading-tight pe-[4px]',
           integration.disabled && 'opacity-50'
         )}
       >
