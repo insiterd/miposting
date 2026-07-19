@@ -167,8 +167,8 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
                 <ImageWithFallback
                   fallbackSrc={`/icons/platforms/${integration.identifier}.png`}
                   src={integration.picture}
-                  className="rounded-[8px]"
-                  alt={integration.identifier}
+                  className="rounded-[8px] w-[36px] h-[36px] min-w-[36px] min-h-[36px] text-transparent object-cover select-none"
+                  alt=""
                   width={36}
                   height={36}
                 />
