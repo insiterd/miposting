@@ -327,7 +327,7 @@ export const MenuComponent: FC<
           : {})}
         role="Handle"
         className={clsx(
-          'group-[.sidebar]:hidden flex-1 min-w-0 flex flex-col justify-center cursor-move pe-[4px]',
+          'group-[.sidebar]:hidden flex-1 min-w-0 flex flex-col justify-center whitespace-nowrap text-ellipsis overflow-hidden cursor-move text-[13px] leading-tight pe-[4px]',
           integration.disabled && 'opacity-50'
         )}
       >
