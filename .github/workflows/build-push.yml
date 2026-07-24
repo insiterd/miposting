@@ -105,12 +105,11 @@ jobs:
           sudo sed -i -E "s|(ghcr.io/insiterd/miposting-landing):[a-zA-Z0-9_.-]+|\1:${{ github.sha }}|g" "$COMPOSE_FILE"
 
           echo "=== Adding certResolver to Docker router labels ==="
-          if ! sudo grep -q "traefik.http.routers.postiz.tls.certResolver" "$COMPOSE_FILE"; then
+          if ! grep -q "traefik.http.routers.postiz.tls.certResolver" "$COMPOSE_FILE"; then
             sudo sed -i '/traefik.http.routers.postiz.tls=true$/a\            - traefik.http.routers.postiz.tls.certResolver=letsencrypt' "$COMPOSE_FILE"
           fi
-          if ! sudo grep -q "traefik.http.routers.landing.tls.certResolver" "$COMPOSE_FILE"; then
+          if ! grep -q "traefik.http.routers.landing.tls.certResolver" "$COMPOSE_FILE"; then
             sudo sed -i '/traefik.http.routers.landing.tls=true$/a\            - traefik.http.routers.landing.tls.certResolver=letsencrypt' "$COMPOSE_FILE"
-          fi
           fi
 
           echo "=== Pulling new images ==="
