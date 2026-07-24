@@ -111,6 +111,7 @@ jobs:
           if ! sudo grep -q "traefik.http.routers.landing.tls.certResolver" "$COMPOSE_FILE"; then
             sudo sed -i '/traefik.http.routers.landing.tls=true$/a\            - traefik.http.routers.landing.tls.certResolver=letsencrypt' "$COMPOSE_FILE"
           fi
+          fi
 
           echo "=== Pulling new images ==="
           docker compose -f "$COMPOSE_FILE" pull postiz postiz-landing
