@@ -97,6 +97,9 @@ jobs:
           COMPOSE_FILE='/data/coolify/applications/flofb07yh5gfcgxhw0ko0m1j/docker-compose.yaml'
           ROUTERS_FILE='/data/coolify/proxy/dynamic/routers.yaml'
 
+          echo "=== Ensuring group permissions for CI/CD ==="
+          sudo chmod g+rx /data/coolify/applications/flofb07yh5gfcgxhw0ko0m1j/
+
           echo "=== Validando acceso a Docker socket ==="
           docker info > /dev/null 2>&1 || { echo "Error: dev no tiene acceso a Docker socket"; exit 1; }
 
