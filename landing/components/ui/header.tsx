@@ -110,14 +110,14 @@ export default function Header() {
               <div className="h-px w-full bg-gray-100 my-1"></div>
               <div className="flex flex-col gap-3">
                 <Link
-                  href="https://app.miposting.com/login"
+                  href="https://app.miposting.com"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="btn-sm bg-white text-gray-800 shadow-sm hover:bg-gray-50 border border-gray-200 justify-center"
                 >
                   Iniciar Sesión
                 </Link>
                 <Link
-                  href="https://app.miposting.com/register"
+                  href="https://app.miposting.com"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="btn-sm bg-blue-500 text-gray-200 shadow-sm hover:bg-blue-600 justify-center"
                 >

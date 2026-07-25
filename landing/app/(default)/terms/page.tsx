@@ -255,10 +255,10 @@ export default function Terms() {
               <li>
                 Sitio web:{" "}
                 <a
-                  href="https://miposting.com"
+                  href="https://insiterd.com"
                   className="text-blue-600 underline hover:text-blue-800"
                 >
-                  https://miposting.com
+                  https://insiterd.com
                 </a>
               </li>
             </ul>
