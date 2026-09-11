@@ -16,6 +16,13 @@ env:
   POSTIZ_IMAGE: ghcr.io/insiterd/miposting-postiz
   LANDING_IMAGE: ghcr.io/insiterd/miposting-landing
 
+# Encola los deploys en vez de solaparlos: dos pushes seguidos a main competian
+# por el mismo docker-compose.yaml y routers.yaml del VPS. No se cancela el que
+# esta en curso porque abortar un deploy a medias es peor que esperarlo.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 jobs:
   build-postiz:
     runs-on: ubuntu-latest
@@ -97,11 +104,44 @@ jobs:
           COMPOSE_FILE='/data/coolify/applications/flofb07yh5gfcgxhw0ko0m1j/docker-compose.yaml'
           ROUTERS_FILE='/data/coolify/proxy/dynamic/routers.yaml'
 
+          echo "=== Validando sudo sin contrasena ==="
+          # El sudoers de dev@ es por-comando (sed/tee/chmod/docker), no un "ALL"
+          # generico: 'sudo -n true' falla siempre porque /usr/bin/true no esta
+          # en la lista blanca, aunque el deploy real funcione. Se prueba con uno
+          # de los comandos que el script realmente usa, en modo no-mutante.
+          sudo -n /usr/bin/sed --version >/dev/null 2>&1 || {
+            echo "FATAL: dev@ necesita sudo NOPASSWD para sed/tee/chmod sobre /data/coolify."
+            echo "       La sesion SSH no es interactiva, asi que un sudo con password aborta el deploy."
+            exit 1
+          }
+
           echo "=== Ensuring group permissions for CI/CD ==="
           sudo chmod g+rx /data/coolify/applications/flofb07yh5gfcgxhw0ko0m1j/
 
           echo "=== Validando acceso a Docker socket ==="
           docker info > /dev/null 2>&1 || { echo "Error: dev no tiene acceso a Docker socket"; exit 1; }
+
+          # SHA actualmente desplegado, para poder revertir si algun gate falla.
+          PREV_SHA=$(grep -oE 'miposting-postiz:[a-zA-Z0-9_.-]+' "$COMPOSE_FILE" | head -1 | cut -d: -f2)
+          if [ -z "$PREV_SHA" ] || [ "$PREV_SHA" = "latest" ]; then
+            echo "AVISO: no se pudo determinar un SHA previo concreto (leido: '${PREV_SHA:-vacio}')."
+            echo "       El rollback automatico quedara deshabilitado en este deploy."
+            PREV_SHA=""
+          else
+            echo "SHA previo desplegado: $PREV_SHA"
+          fi
+
+          rollback() {
+            if [ -z "$PREV_SHA" ]; then
+              echo "!!! Sin SHA previo conocido: NO se revierte. Revisar el VPS a mano."
+              return 0
+            fi
+            echo "!!! Revirtiendo a $PREV_SHA"
+            sudo sed -i -E "s|(ghcr.io/insiterd/miposting-postiz):[a-zA-Z0-9_.-]+|\1:$PREV_SHA|g" "$COMPOSE_FILE"
+            sudo sed -i -E "s|(ghcr.io/insiterd/miposting-landing):[a-zA-Z0-9_.-]+|\1:$PREV_SHA|g" "$COMPOSE_FILE"
+            docker compose -f "$COMPOSE_FILE" up -d --no-deps postiz postiz-landing || true
+            echo "!!! Rollback aplicado. Produccion vuelve a $PREV_SHA"
+          }
 
           echo "=== Pinning images to ${{ github.sha }} ==="
           sudo sed -i -E "s|(ghcr.io/insiterd/miposting-postiz):[a-zA-Z0-9_.-]+|\1:${{ github.sha }}|g" "$COMPOSE_FILE"
@@ -122,6 +162,7 @@ jobs:
           docker compose -f "$COMPOSE_FILE" up -d --no-deps postiz postiz-landing
 
           echo "=== Waiting for containers to be healthy... ==="
+          CONTAINERS_HEALTHY=false
           for i in $(seq 1 30); do
             POSTIZ_ID=$(docker ps -q -f "label=com.docker.compose.service=postiz")
             LANDING_ID=$(docker ps -q -f "label=com.docker.compose.service=postiz-landing")
@@ -130,22 +171,37 @@ jobs:
             echo "  postiz: $HEALTH, landing: $LANDING_HEALTH"
             if [ "$HEALTH" = "healthy" ] && [ "$LANDING_HEALTH" = "healthy" ]; then
               echo "Both containers healthy!"
+              CONTAINERS_HEALTHY=true
               break
             fi
             sleep 3
           done
+          if [ "$CONTAINERS_HEALTHY" != true ]; then
+            echo "ERROR: los contenedores no llegaron a healthy en 90s (postiz: $HEALTH, landing: $LANDING_HEALTH)"
+            rollback
+            exit 1
+          fi
 
+          # El backend NestJS escucha en :3000; :5000 es nginx, que responde aunque
+          # NestJS este caido, de ahi que esta sonda antes pasara siempre.
           echo "=== Waiting for NestJS backend to be ready... ==="
           POSTIZ_CONTAINER=$(docker ps -q -f "label=com.docker.compose.service=postiz")
+          BACKEND_READY=false
           for i in $(seq 1 12); do
-            BACKEND_OK=$(docker exec "$POSTIZ_CONTAINER" bash -c "timeout 3 cat < /dev/null > /dev/tcp/127.0.0.1/5000" 2>/dev/null && echo "ok" || echo "no")
+            BACKEND_OK=$(docker exec "$POSTIZ_CONTAINER" bash -c "timeout 3 cat < /dev/null > /dev/tcp/127.0.0.1/3000" 2>/dev/null && echo "ok" || echo "no")
             if [ "$BACKEND_OK" = "ok" ]; then
               echo "Backend ready!"
+              BACKEND_READY=true
               break
             fi
             echo "  backend attempt $i/12"
             sleep 5
           done
+          if [ "$BACKEND_READY" != true ]; then
+            echo "ERROR: NestJS no escucha en :3000 tras 60s"
+            rollback
+            exit 1
+          fi
 
           echo "=== Verifying routers.yaml integrity ==="
           cat << 'YAML' | sudo tee "$ROUTERS_FILE" > /dev/null
@@ -217,9 +273,13 @@ jobs:
             FRONTEND_OK=false
             COOLIFY_OK=false
 
-            curl -sf -o /dev/null --max-time 10 "https://app.miposting.com/api/health" && API_OK=true
-            curl -sfk -o /dev/null --max-time 15 "https://miposting.com/" && LANDING_OK=true
+            # /api/health lo sintetiza nginx con un 200 fijo, asi que no prueba nada.
+            # /api/ sale del prefijo en nginx y llega al RootController de NestJS,
+            # que responde "App is running!": valida Traefik -> nginx -> backend.
+            curl -sf --max-time 10 "https://app.miposting.com/api/" 2>/dev/null | grep -q "App is running!" && API_OK=true
+            curl -sf -o /dev/null --max-time 15 "https://miposting.com/" && LANDING_OK=true
             curl -sf -o /dev/null --max-time 10 "https://app.miposting.com/auth" && FRONTEND_OK=true
+            # -k solo aqui: Coolify es infra ajena a la app y no bloquea el deploy.
             curl -sfk -o /dev/null --max-time 10 "https://coolify.insiterd.com/login" && COOLIFY_OK=true
 
             if [ "$API_OK" = true ] && [ "$LANDING_OK" = true ] && [ "$FRONTEND_OK" = true ]; then
@@ -232,6 +292,7 @@ jobs:
 
             if [ "$i" = "12" ]; then
               echo "ERROR: Endpoints failed after $i attempts"
+              rollback
               exit 1
             fi
           done

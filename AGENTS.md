@@ -145,11 +145,27 @@ All apps load root `.env` explicitly: `dotenv -e ../../.env`. No auto-detection.
 
 El CI/CD build-push.yml hace:
 1. Build + push a GHCR (dos jobs paralelos: postiz, landing)
-2. Deploy via SSH al VPS: `pull → up -d --no-deps → healthcheck loop → fix compose labels → fix routers.yaml → restart coolify-proxy → verify endpoints (12×5s)`
+2. Deploy via SSH al VPS: `preflight sudo → pin imágenes → pull → up -d --no-deps → healthcheck loop → backend :3000 → fix routers.yaml → restart coolify-proxy → verify endpoints (12×5s)`
+
+El workflow lleva `concurrency: deploy-production` con `cancel-in-progress: false`, así que los deploys se encolan en vez de competir por el mismo compose del VPS.
+
+### Requisito: sudo sin contraseña para `dev@`
+
+El script remoto usa `sudo` para `chmod`/`sed`/`tee` sobre `/data/coolify/...`. La sesión SSH **no es interactiva**, así que un sudo que pida contraseña aborta el deploy (pasó el 2026-07-25: `sudo: a password is required`, run 30136761436). El deploy ahora hace `sudo -n true` como primer paso y falla con un mensaje explícito si no está configurado. Si se reconstruye el VPS, hay que reponer la entrada NOPASSWD para `dev`.
+
+### Gates del deploy (todos con rollback automático)
+
+El script guarda el SHA actualmente desplegado (`PREV_SHA`) antes de pinear el nuevo. Si cualquiera de estos gates falla, revierte el compose a `PREV_SHA`, levanta de nuevo los contenedores y sale con error:
+
+1. **Contenedores healthy** (30×3s) — antes el bucle no abortaba si nunca llegaban a healthy.
+2. **Backend en `:3000`** — es el puerto de NestJS. Antes sondeaba `:5000`, que es **nginx**: respondía aunque NestJS estuviera caído.
+3. **Endpoints externos** (12×5s) — `https://app.miposting.com/api/` debe devolver `App is running!` (RootController vía nginx). **No usar `/api/health`**: nginx lo sintetiza con un `return 200` fijo (`var/docker/nginx.conf`) y pasa siempre, backend vivo o no.
+
+Si `PREV_SHA` no se puede determinar (p. ej. el compose tiene `:latest`), el rollback se desactiva y el log lo avisa en vez de fallar en silencio.
 
 ### Cambios en CI/CD (2026-07-18)
 
-- **Readiness check sin curl**: La imagen postiz no tiene curl. Se usa `bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/5000'` para verificar puerto interno.
+- **Readiness check sin curl**: La imagen postiz no tiene curl. Se usa `bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/<puerto>'` para verificar el puerto interno. (Corregido después: el puerto correcto es `3000`, no `5000` — ver "Gates del deploy" arriba.)
 - **certResolver en Docker router**: `sudo sed` agrega `traefik.http.routers.postiz.tls.certResolver=letsencrypt` al compose. Sin esto, Traefik usa default cert (self-signed) aunque el ACME cert exista.
 - **File provider routers**: `routers.yaml` se crea/verifica con `tls.certResolver: letsencrypt` y `priority: 101` (override del Docker router priority 100).
 - **Reintentos aumentados**: Endpoint verification 5→12 intentos (60s) para dar tiempo a ACME post-restart.
@@ -223,35 +239,22 @@ Browser → Traefik:443 → postiz-landing:80 (Next.js estático)
 
 Coolify genera **dos providers** de Traefik:
 1. **Docker provider** — crea routers desde labels del compose (nombre: `postiz`, `landing`, prioridad: 100)
-2. **File provider** — carga `/data/coolify/proxy/dynamic/routers.yaml` (nombre: `postiz-app`, `landing-web`)
+2. **File provider** — carga `/data/coolify/proxy/dynamic/routers.yaml` (nombre: `postiz-app`, `landing-web`, `coolify-web`)
 
-**Regla**: Docker provider tiene prioridad. File-provider es fallback (priority: 1).
+**Regla**: el **file provider gana** — el CI/CD lo escribe con `priority: 101`, por encima del 100 del Docker provider. Los labels del compose son el **fallback** para cuando Coolify regenera o borra `routers.yaml`; por eso el deploy sigue inyectándoles `certResolver`.
 
-### Configuración actual de `/data/coolify/proxy/dynamic/routers.yaml`
+### Configuración de `/data/coolify/proxy/dynamic/routers.yaml`
+
+**El CI/CD sobrescribe este archivo en cada deploy** (`build-push.yml`, paso "Verifying routers.yaml integrity"). No editarlo a mano en el VPS: el siguiente deploy lo pisa. La fuente de verdad es el heredoc `YAML` dentro del workflow.
+
 ```yaml
 http:
   routers:
-    postiz-app:          # ← fallback (priority 1)
-      rule: "Host(`app.miposting.com`)"
-      entryPoints: [https]
-      service: postiz-app
-      tls: true
-      priority: 1        # ← prioridad baja (fallback)
-    landing-web:
-      rule: "Host(`miposting.com`)"
-      entryPoints: [https]
-      service: landing-web
-      tls: true
-      priority: 100
-  services:
-    postiz-app:
-      loadBalancer:
-        servers: [{url: "http://postiz:5000"}]
-        passHostHeader: true
-    landing-web:
-      loadBalancer:
-        servers: [{url: "http://postiz-landing:80"}]
-        passHostHeader: true
+    postiz-app:                    # app.miposting.com  → http://postiz:5000
+    landing-web:                   # miposting.com      → http://postiz-landing:80
+    coolify-web:                   # coolify.insiterd.com → http://coolify:8080
+    # los tres con: entryPoints [https], tls.certResolver letsencrypt,
+    # priority 101, middlewares [gzip]
   middlewares:
     gzip:
       compress: {}
@@ -274,11 +277,11 @@ http:
 ### Solución definitiva al conflicto de routers (2026-07-14)
 **Problema**: Coolify creaba un router Docker `postiz` con `Host(\`app.miposting.com\`)` en entrypoint HTTPS, que competía con nuestro file-provider router `postiz-api` (misma regla, misma prioridad). Resultado: TLS handshake OK pero sin respuesta HTTP.
 
-**Fix**: File-provider router renombrado a `postiz-app` con `priority: 1` (fallback). Docker provider (priority 100) tiene prioridad.
+**Fix**: File-provider router renombrado de `postiz-api` a `postiz-app`, y el CI/CD reescribe `routers.yaml` entero en cada deploy con `priority: 101` para que gane siempre al Docker provider (100). Se acabó el empate que dejaba el TLS handshake OK pero sin respuesta HTTP.
 
 **CI/CD ahora verifica**:
-1. Que `routers.yaml` no tenga el nombre viejo `postiz-api`
-2. Que `postiz-app` tenga `priority: 1`
+1. Que el YAML resultante parsea (`python3 -c "yaml.safe_load"`) antes de reiniciar Traefik
+2. Que los endpoints responden tras el deploy, con rollback al SHA anterior si no
 3. Reintenta verificación de endpoints 3 veces con 5s de espera
 
 ### Monitoreo implementado
