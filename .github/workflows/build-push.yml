@@ -105,8 +105,12 @@ jobs:
           ROUTERS_FILE='/data/coolify/proxy/dynamic/routers.yaml'
 
           echo "=== Validando sudo sin contrasena ==="
-          sudo -n true 2>/dev/null || {
-            echo "FATAL: dev@ necesita sudo NOPASSWD para chmod/sed/tee sobre /data/coolify."
+          # El sudoers de dev@ es por-comando (sed/tee/chmod/docker), no un "ALL"
+          # generico: 'sudo -n true' falla siempre porque /usr/bin/true no esta
+          # en la lista blanca, aunque el deploy real funcione. Se prueba con uno
+          # de los comandos que el script realmente usa, en modo no-mutante.
+          sudo -n /usr/bin/sed --version >/dev/null 2>&1 || {
+            echo "FATAL: dev@ necesita sudo NOPASSWD para sed/tee/chmod sobre /data/coolify."
             echo "       La sesion SSH no es interactiva, asi que un sudo con password aborta el deploy."
             exit 1
           }
