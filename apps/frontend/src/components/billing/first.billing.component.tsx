@@ -11,7 +11,10 @@ import { AttachToFeedbackIcon } from '@gitroom/frontend/components/new-layout/se
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
 import dynamic from 'next/dynamic';
 import { LogoTextComponent } from '@gitroom/frontend/components/ui/logo-text.component';
-import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import {
+  pricing,
+  pricingUSD,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { capitalize } from 'lodash';
 import clsx from 'clsx';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
@@ -46,8 +49,18 @@ const EmbeddedBilling = dynamic(
   }
 );
 
+const PayPalCheckout = dynamic(
+  () =>
+    import('@gitroom/frontend/components/billing/paypal-checkout').then(
+      (mod) => mod.PayPalCheckout
+    ),
+  {
+    ssr: false,
+  }
+);
+
 export const FirstBillingComponent = () => {
-  const { stripeClient } = useVariables();
+  const { stripeClient, paypalClientId, paymentGateway } = useVariables();
   const user = useUser();
   const dub = useDubClickId();
   const [stripe, setStripe] = useState<null | Promise<Stripe>>(null);
@@ -60,7 +73,9 @@ export const FirstBillingComponent = () => {
   const [datafast_session_id] = useCookie('datafast_session_id', '');
 
   useEffect(() => {
-    setStripe(loadStripe(stripeClient));
+    if (paymentGateway === 'stripe') {
+      setStripe(loadStripe(stripeClient));
+    }
   }, []);
 
   const loadCheckout = useCallback(async () => {
@@ -205,7 +220,27 @@ export const FirstBillingComponent = () => {
           <div className="block tablet:hidden">
             <JoinOver />
           </div>
-          {!isLoading && data && stripe ? (
+          {paymentGateway === 'paypal' ? (
+            !isLoading && data?.planId ? (
+              <PayPalCheckout
+                clientId={paypalClientId}
+                planId={data.planId}
+                customId={data.customId}
+              />
+            ) : !isLoading && data && !data.planId ? (
+              // resolvePlanId() en PayPalGateway tira error explicito cuando
+              // no hay plan_id configurado para este tier/periodo (p.ej.
+              // YEARLY, que todavia no existe como plan real en PayPal).
+              <div className="text-textItemBlur">
+                {t(
+                  'billing_paypal_plan_unavailable',
+                  'This plan is not available via PayPal yet. Try a different billing period.'
+                )}
+              </div>
+            ) : (
+              <LoadingComponent />
+            )
+          ) : !isLoading && data && stripe ? (
             <EmbeddedBilling
               stripe={stripe}
               secret={data.client_secret}
@@ -271,12 +306,18 @@ export const FirstBillingComponent = () => {
                     </div>
                     <div className="text-[24px] mobile:text-[18px] font-[400]">
                                             <span className="text-[32px] mobile:text-[24px] font-[600]">
-                        RD$
-                        {
-                          value[
-                            period === 'MONTHLY' ? 'month_price' : 'year_price'
-                          ]
-                        }
+                        {paymentGateway === 'paypal' ? '$' : 'RD$'}
+                        {paymentGateway === 'paypal'
+                          ? pricingUSD[key as 'STANDARD' | 'PRO' | 'ULTIMATE'][
+                              period === 'MONTHLY'
+                                ? 'month_price'
+                                : 'year_price'
+                            ]
+                          : value[
+                              period === 'MONTHLY'
+                                ? 'month_price'
+                                : 'year_price'
+                            ]}
                       </span> {' '}
                       {period === 'MONTHLY'
                         ? t('billing_per_month', '/ month')
