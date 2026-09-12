@@ -11,11 +11,12 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 import { TrackService } from '@gitroom/nestjs-libraries/track/track.service';
 import { UsersService } from '@gitroom/nestjs-libraries/database/prisma/users/users.service';
 import { TrackEnum } from '@gitroom/nestjs-libraries/user/track.enum';
+import { PaymentGatewayInterface } from '@gitroom/nestjs-libraries/services/payment/payment-gateway.interface';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_nothing');
 
 @Injectable()
-export class StripeService {
+export class StripeService implements PaymentGatewayInterface {
   constructor(
     private _subscriptionService: SubscriptionService,
     private _organizationService: OrganizationService,

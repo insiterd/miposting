@@ -1,6 +1,7 @@
 import { Body, Controller, Get, HttpException, Param, Post, Req } from '@nestjs/common';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
+import { GatewayService } from '@gitroom/nestjs-libraries/services/payment/gateway.service';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization, User } from '@prisma/client';
 import { BillingSubscribeDto } from '@gitroom/nestjs-libraries/dtos/billing/billing.subscribe.dto';
@@ -16,6 +17,7 @@ export class BillingController {
   constructor(
     private _subscriptionService: SubscriptionService,
     private _stripeService: StripeService,
+    private _gatewayService: GatewayService,
     private _notificationService: NotificationService
   ) {}
 
@@ -68,7 +70,7 @@ export class BillingController {
     @Req() req: Request
   ) {
     const uniqueId = req?.cookies?.track;
-    return this._stripeService.embedded(
+    return this._gatewayService.embedded(
       uniqueId,
       org.id,
       user.id,
@@ -85,7 +87,7 @@ export class BillingController {
     @Req() req: Request
   ) {
     const uniqueId = req?.cookies?.track;
-    return this._stripeService.subscribe(
+    return this._gatewayService.subscribe(
       uniqueId,
       org.id,
       user.id,
@@ -96,10 +98,10 @@ export class BillingController {
 
   @Get('/portal')
   async modifyPayment(@GetOrgFromRequest() org: Organization) {
-    const customer = await this._stripeService.getCustomerByOrganizationId(
+    const customer = await this._gatewayService.getCustomerByOrganizationId(
       org.id
     );
-    const { url } = await this._stripeService.createBillingPortalLink(customer);
+    const { url } = await this._gatewayService.createBillingPortalLink(customer);
     return {
       portal: url,
     };
@@ -123,7 +125,7 @@ export class BillingController {
       user.email
     );
 
-    return this._stripeService.setToCancel(org.id);
+    return this._gatewayService.setToCancel(org.id);
   }
 
   @Post('/prorate')
@@ -176,7 +178,7 @@ export class BillingController {
       throw new HttpException('Unauthorized', 400);
     }
 
-    return this._stripeService.cancelSubscription(org.id);
+    return this._gatewayService.cancelSubscription(org.id);
   }
 
   @Get('/chatbase-refund/preview')
