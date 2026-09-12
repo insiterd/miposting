@@ -140,7 +140,7 @@ export class SubscriptionRepository {
     identifier: string,
     customerId: string,
     totalChannels: number,
-    billing: 'STANDARD' | 'TEAM' | 'PRO' | 'ULTIMATE',
+    billing: 'STANDARD' | 'PRO' | 'ULTIMATE',
     period: 'MONTHLY' | 'YEARLY',
     cancelAt: number | null,
     code?: string,

@@ -59,25 +59,6 @@ export const pricing: PricingInterface = {
     generate_videos: 3,
     networks: ['X', 'LinkedIn', 'LinkedIn Page', 'Instagram', 'Instagram Standalone', 'Facebook', 'Threads'],
   },
-  TEAM: {
-    current: 'TEAM',
-    month_price: 2000,
-    year_price: 19200,
-    channel: 10,
-    posts_per_month: 1000000,
-    image_generation_count: 100,
-    community_features: true,
-    team_members: true,
-    featured_by_gitroom: true,
-    ai: true,
-    import_from_channels: true,
-    image_generator: true,
-    public_api: true,
-    webhooks: 10,
-    autoPost: true,
-    generate_videos: 10,
-    networks: ['X', 'LinkedIn', 'LinkedIn Page', 'Instagram', 'Instagram Standalone', 'Facebook', 'Threads', 'YouTube', 'GMB', 'TikTok', 'Pinterest', 'Dribbble'],
-  },
   PRO: {
     current: 'PRO',
     month_price: 3500,
@@ -116,4 +97,17 @@ export const pricing: PricingInterface = {
     generate_videos: 60,
     networks: ['X', 'LinkedIn', 'LinkedIn Page', 'Instagram', 'Instagram Standalone', 'Facebook', 'Threads', 'YouTube', 'GMB', 'TikTok', 'Pinterest', 'Dribbble', 'Reddit', 'Discord', 'Slack', 'Telegram', 'Medium', 'DevTo', 'Hashnode', 'Wordpress', 'Kick', 'Twitch', 'Mastodon', 'Bluesky', 'Lemmy', 'Farcaster', 'Nostr', 'Vk', 'Listmonk', 'Moltbook', 'Whop', 'Skool', 'Mewe'],
   },
+};
+
+// PayPal no soporta DOP como moneda de transaccion: Stripe sigue cobrando en
+// DOP via `pricing`, PayPal usa esta tabla en USD. Montos PROVISIONALES
+// (conversion aproximada a ~60 DOP/USD) — confirmar antes de crear los planes
+// reales en PayPal Dashboard (Fase 4).
+export const pricingUSD: Record<
+  'STANDARD' | 'PRO' | 'ULTIMATE',
+  { month_price: number; year_price: number }
+> = {
+  STANDARD: { month_price: 19, year_price: 199 },
+  PRO: { month_price: 59, year_price: 559 },
+  ULTIMATE: { month_price: 79, year_price: 799 },
 };

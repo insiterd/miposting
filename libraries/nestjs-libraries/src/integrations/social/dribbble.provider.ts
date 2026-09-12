@@ -21,7 +21,7 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Dribbble has moderate API limits
   identifier = 'dribbble';
   name = 'Dribbble';
-  allowedPlans = ['TEAM', 'PRO', 'ULTIMATE'];
+  allowedPlans = ['PRO', 'ULTIMATE'];
   isBetweenSteps = false;
   scopes = ['public', 'upload'];
   editor = 'normal' as const;
