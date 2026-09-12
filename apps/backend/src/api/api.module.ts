@@ -4,6 +4,7 @@ import { AuthService } from '@gitroom/backend/services/auth/auth.service';
 import { UsersController } from '@gitroom/backend/api/routes/users.controller';
 import { AuthMiddleware } from '@gitroom/backend/services/auth/auth.middleware';
 import { StripeController } from '@gitroom/backend/api/routes/stripe.controller';
+import { PayPalController } from '@gitroom/backend/api/routes/paypal.controller';
 import { StripeService } from '@gitroom/nestjs-libraries/services/stripe.service';
 import { GatewayService } from '@gitroom/nestjs-libraries/services/payment/gateway.service';
 import { PayPalGateway } from '@gitroom/nestjs-libraries/services/payment/paypal.gateway';
@@ -72,6 +73,7 @@ const authenticatedController = [
   controllers: [
     RootController,
     StripeController,
+    PayPalController,
     AuthController,
     PublicController,
     MonitorController,
