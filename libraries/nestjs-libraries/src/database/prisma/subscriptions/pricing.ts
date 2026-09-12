@@ -100,14 +100,17 @@ export const pricing: PricingInterface = {
 };
 
 // PayPal no soporta DOP como moneda de transaccion: Stripe sigue cobrando en
-// DOP via `pricing`, PayPal usa esta tabla en USD. Montos PROVISIONALES
-// (conversion aproximada a ~60 DOP/USD) — confirmar antes de crear los planes
-// reales en PayPal Dashboard (Fase 4).
+// DOP via `pricing`, PayPal usa esta tabla en USD. month_price refleja los
+// 3 planes mensuales ya creados y activos en PayPal (verificado via API
+// contra los plan_id reales) — no son un estimado. year_price sigue
+// PROVISIONAL: los planes anuales aun no existen en PayPal (Fase 4
+// pendiente), asi que estos valores no tienen un plan_id real detras
+// todavia y no deben tomarse como precio final.
 export const pricingUSD: Record<
   'STANDARD' | 'PRO' | 'ULTIMATE',
   { month_price: number; year_price: number }
 > = {
   STANDARD: { month_price: 19, year_price: 199 },
-  PRO: { month_price: 59, year_price: 559 },
+  PRO: { month_price: 60, year_price: 559 },
   ULTIMATE: { month_price: 79, year_price: 799 },
 };
