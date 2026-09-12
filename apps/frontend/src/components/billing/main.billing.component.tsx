@@ -11,7 +11,10 @@ import { deleteDialog } from '@gitroom/react/helpers/delete.dialog';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import dayjs from 'dayjs';
 import clsx from 'clsx';
-import { pricing } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
+import {
+  pricing,
+  pricingUSD,
+} from '@gitroom/nestjs-libraries/database/prisma/subscriptions/pricing';
 import { FAQComponent } from '@gitroom/frontend/components/billing/faq.component';
 import { useSWRConfig } from 'swr';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
@@ -28,6 +31,17 @@ import { FinishTrial } from '@gitroom/frontend/components/billing/finish.trial';
 import { newDayjs } from '@gitroom/frontend/components/layout/set.timezone';
 import { useDubClickId } from '@gitroom/frontend/components/layout/dubAnalytics';
 import { LogoutComponent } from '@gitroom/frontend/components/layout/logout.component';
+import dynamic from 'next/dynamic';
+
+const PayPalCheckout = dynamic(
+  () =>
+    import('@gitroom/frontend/components/billing/paypal-checkout').then(
+      (mod) => mod.PayPalCheckout
+    ),
+  {
+    ssr: false,
+  }
+);
 
 export const Prorate: FC<{
   period: 'MONTHLY' | 'YEARLY';
@@ -249,7 +263,7 @@ export const MainBillingComponent: FC<{
   sub?: Subscription;
 }> = (props) => {
   const { sub } = props;
-  const { isGeneral } = useVariables();
+  const { isGeneral, paypalClientId, paymentGateway } = useVariables();
   const { mutate } = useSWRConfig();
   const fetch = useFetch();
   const toast = useToaster();
@@ -416,17 +430,56 @@ export const MainBillingComponent: FC<{
           return;
         }
         setLoading(true);
-        const { url, portal } = await (
-          await fetch('/billing/subscribe', {
-            method: 'POST',
-            body: JSON.stringify({
-              period: monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY',
-              utm,
-              billing,
-              ...(dub ? { dub } : {}),
-            }),
-          })
-        ).json();
+        const subscribeResponse = await fetch('/billing/subscribe', {
+          method: 'POST',
+          body: JSON.stringify({
+            period: monthlyOrYearly === 'on' ? 'YEARLY' : 'MONTHLY',
+            utm,
+            billing,
+            ...(dub ? { dub } : {}),
+          }),
+        });
+        if (!subscribeResponse.ok) {
+          // Sin esto, un error del backend (p.ej. periodo YEARLY sin
+          // plan_id de PayPal configurado, ver resolvePlanId() en
+          // paypal.gateway.ts) caía silenciosamente en el 'else' de abajo,
+          // que asume que la suscripcion ya se actualizo.
+          setLoading(false);
+          toast.show(
+            'We could not process the subscription. Please try again.',
+            'warning'
+          );
+          return;
+        }
+        const { url, portal, planId, customId } = await subscribeResponse.json();
+        if (planId) {
+          // Camino PayPal (ver paypal.gateway.ts): no hay nada que
+          // actualizar en el estado local todavia — la suscripcion solo
+          // queda confirmada cuando el comprador aprueba en PayPal y el
+          // webhook BILLING.SUBSCRIPTION.ACTIVATED la escribe en la DB.
+          setLoading(false);
+          await track(TrackEnum.InitiateCheckout, {
+            value:
+              pricing[billing][
+                monthlyOrYearly === 'on' ? 'year_price' : 'month_price'
+              ],
+          });
+          modal.openModal({
+            title: t('subscribe_with_paypal', 'Subscribe with PayPal'),
+            withCloseButton: true,
+            classNames: {
+              modal: 'bg-transparent text-textColor',
+            },
+            children: (
+              <PayPalCheckout
+                clientId={paypalClientId}
+                planId={planId}
+                customId={customId}
+              />
+            ),
+          });
+          return;
+        }
         if (url) {
           await track(TrackEnum.InitiateCheckout, {
             value:
@@ -499,8 +552,12 @@ export const MainBillingComponent: FC<{
               <div className="text-[18px]">{name}</div>
               <div className="text-[38px] flex gap-[2px] items-center">
                 <div>
-                  RD$
-                  {monthlyOrYearly === 'on'
+                  {paymentGateway === 'paypal' && name !== 'FREE' ? '$' : 'RD$'}
+                  {paymentGateway === 'paypal' && name !== 'FREE'
+                    ? pricingUSD[name as 'STANDARD' | 'PRO' | 'ULTIMATE'][
+                        monthlyOrYearly === 'on' ? 'year_price' : 'month_price'
+                      ]
+                    : monthlyOrYearly === 'on'
                     ? values.year_price
                     : values.month_price}
                 </div>
