@@ -466,7 +466,7 @@ const ImportDebugPost = () => {
 export const Impersonate = () => {
   const fetch = useFetch();
   const [name, setName] = useState('');
-  const { isSecured, billingEnabled } = useVariables();
+  const { isSecured, paymentGateway } = useVariables();
   const user = useUser();
   const load = useCallback(async () => {
     if (!name) {
@@ -540,7 +540,7 @@ export const Impersonate = () => {
                   </div>
                 </div>
                 {user?.tier?.current === 'FREE' && <Subscription />}
-                {billingEnabled && <ManageBilling />}
+                {paymentGateway === 'stripe' && <ManageBilling />}
               </div>
             ) : (
               <div className="flex items-center gap-[10px]">

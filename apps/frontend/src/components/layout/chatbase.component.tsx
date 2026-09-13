@@ -50,6 +50,7 @@ export const ChatbaseComponentLoad: FC = () => {
 
 const ChatBaseCode: FC<{ token: string }> = ({ token }) => {
   const fetch = useFetch();
+  const { paymentGateway } = useVariables();
 
   useEffect(() => {
     if (!window.chatbase || window.chatbase('getState') !== 'initialized') {
@@ -91,6 +92,15 @@ const ChatBaseCode: FC<{ token: string }> = ({ token }) => {
 
     window.chatbase('registerTools', {
       stripe_refund: async () => {
+        if (paymentGateway !== 'stripe') {
+          return {
+            status: 'success',
+            data: {
+              refunded: false,
+              reason: 'Refunds are not supported for this payment method',
+            },
+          };
+        }
         try {
           const previewResponse = await fetch('/billing/chatbase-refund/preview');
 

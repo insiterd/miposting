@@ -190,12 +190,15 @@ const Accept: FC<{ resolve: (res: boolean) => void }> = ({ resolve }) => {
   const [loading, setLoading] = useState(false);
   const fetch = useFetch();
   const toaster = useToaster();
+  const { paymentGateway } = useVariables();
 
   const apply = useCallback(async () => {
     setLoading(true);
-    await fetch('/billing/apply-discount', {
-      method: 'POST',
-    });
+    if (paymentGateway === 'stripe') {
+      await fetch('/billing/apply-discount', {
+        method: 'POST',
+      });
+    }
 
     resolve(true);
     toaster.show('50% discount applied successfully');
