@@ -1,3 +1,4 @@
+import { COMING_SOON_PLANS } from '@gitroom/nestjs-libraries/integrations/social/disabled-providers.constant';
 import {
   AuthTokenDetails,
   PostDetails,
@@ -19,7 +20,7 @@ export class LemmyProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Lemmy instances typically have moderate limits
   identifier = 'lemmy';
   name = 'Lemmy';
-  allowedPlans = ['ULTIMATE'];
+  allowedPlans = COMING_SOON_PLANS;
   isBetweenSteps = false;
   scopes = [] as string[];
   editor = 'normal' as const;

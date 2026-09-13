@@ -1,3 +1,4 @@
+import { COMING_SOON_PLANS } from '@gitroom/nestjs-libraries/integrations/social/disabled-providers.constant';
 import {
   AuthTokenDetails,
   PostDetails,
@@ -21,7 +22,7 @@ export class WordpressProvider
 {
   identifier = 'wordpress';
   name = 'WordPress';
-  allowedPlans = ['PRO', 'ULTIMATE'];
+  allowedPlans = COMING_SOON_PLANS;
   isBetweenSteps = false;
   editor = 'html' as const;
   scopes = [] as string[];

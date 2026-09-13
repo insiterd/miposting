@@ -1,3 +1,4 @@
+import { COMING_SOON_PLANS } from '@gitroom/nestjs-libraries/integrations/social/disabled-providers.constant';
 import {
   AuthTokenDetails,
   PostDetails,
@@ -15,7 +16,7 @@ export class MediumProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Medium has lenient publishing limits
   identifier = 'medium';
   name = 'Medium';
-  allowedPlans = ['PRO', 'ULTIMATE'];
+  allowedPlans = COMING_SOON_PLANS;
   isBetweenSteps = false;
   scopes = [] as string[];
   editor = 'markdown' as const;

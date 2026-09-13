@@ -1,3 +1,4 @@
+import { COMING_SOON_PLANS } from '@gitroom/nestjs-libraries/integrations/social/disabled-providers.constant';
 import { TweetV2, TwitterApi } from 'twitter-api-v2';
 import { createHmac, randomBytes } from 'crypto';
 import {
@@ -33,7 +34,7 @@ import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 export class XProvider extends SocialAbstract implements SocialProvider {
   identifier = 'x';
   name = 'X';
-  allowedPlans = ['STANDARD', 'PRO', 'ULTIMATE'];
+  allowedPlans = COMING_SOON_PLANS;
   isBetweenSteps = false;
   scopes = [] as string[];
   stripLinks = () => !!process.env.STRIP_LINKS_FROM_X_POSTS;

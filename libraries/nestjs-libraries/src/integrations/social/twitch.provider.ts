@@ -1,3 +1,4 @@
+import { COMING_SOON_PLANS } from '@gitroom/nestjs-libraries/integrations/social/disabled-providers.constant';
 import {
   AuthTokenDetails,
   PostDetails,
@@ -14,7 +15,7 @@ export class TwitchProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 1;
   identifier = 'twitch';
   name = 'Twitch';
-  allowedPlans = ['ULTIMATE'];
+  allowedPlans = COMING_SOON_PLANS;
   isBetweenSteps = false;
   editor = 'normal' as const;
   scopes = ['user:write:chat', 'user:read:chat', 'moderator:manage:announcements'];

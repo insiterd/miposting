@@ -1,3 +1,4 @@
+import { COMING_SOON_PLANS } from '@gitroom/nestjs-libraries/integrations/social/disabled-providers.constant';
 import {
   AnalyticsData,
   AuthTokenDetails,
@@ -21,7 +22,7 @@ export class DribbbleProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Dribbble has moderate API limits
   identifier = 'dribbble';
   name = 'Dribbble';
-  allowedPlans = ['PRO', 'ULTIMATE'];
+  allowedPlans = COMING_SOON_PLANS;
   isBetweenSteps = false;
   scopes = ['public', 'upload'];
   editor = 'normal' as const;

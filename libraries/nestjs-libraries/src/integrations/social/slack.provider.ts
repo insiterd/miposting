@@ -1,3 +1,4 @@
+import { COMING_SOON_PLANS } from '@gitroom/nestjs-libraries/integrations/social/disabled-providers.constant';
 import {
   AuthTokenDetails,
   PostDetails,
@@ -15,7 +16,7 @@ export class SlackProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 3; // Slack has moderate API limits
   identifier = 'slack';
   name = 'Slack';
-  allowedPlans = ['PRO', 'ULTIMATE'];
+  allowedPlans = COMING_SOON_PLANS;
   isBetweenSteps = false;
   editor = 'normal' as const;
   scopes = [

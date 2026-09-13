@@ -1,3 +1,4 @@
+import { COMING_SOON_PLANS } from '@gitroom/nestjs-libraries/integrations/social/disabled-providers.constant';
 import {
   AuthTokenDetails,
   PostDetails,
@@ -30,7 +31,7 @@ export class NostrProvider extends SocialAbstract implements SocialProvider {
   override maxConcurrentJob = 5;
   identifier = 'nostr';
   name = 'Nostr';
-  allowedPlans = ['ULTIMATE'];
+  allowedPlans = COMING_SOON_PLANS;
   isBetweenSteps = false;
   scopes = [] as string[];
   editor = 'normal' as const;

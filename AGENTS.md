@@ -333,6 +333,19 @@ http:
 | 23. CI/CD verde — endpoint verification pasa | ✅ |
 | 24. SSL Let's Encrypt para app.miposting.com | ✅ |
 
+## Incidente: restart real vía Coolify tumbó producción ~15 min (2026-09-13)
+
+**Contexto**: tras arreglar el bug de `private_key` null (arriba), se probó un restart real disparado desde Coolify (redeploy `#216`) para confirmar el fix end-to-end. El fix de `private_key` funcionó — el deploy avanzó sin ese error — pero el redeploy completo falló por una cadena de problemas de infraestructura no relacionados, nunca vistos antes porque el stack `temporal`/`postiz` no se recreaba desde hacía mucho tiempo. **`postiz` quedó caído en producción (`502`) durante el proceso de diagnóstico y fix**, no solo en la prueba.
+
+**Cadena de fallos, en orden**:
+
+1. **`temporal` con permisos de bind-mount rotos**: `/data/coolify/applications/flofb07yh5gfcgxhw0ko0m1j/dynamicconfig` en el host es propiedad de `coolify` (uid 1001, modo 750/640), pero el proceso dentro del contenedor `temporalio/auto-setup` corre como uid 1000 (`temporal`) — ni dueño ni grupo coinciden, "other" sin permisos → `permission denied` leyendo `development-sql.yaml`. `temporal` quedó en crash-loop, y como `postiz` depende de `temporal` healthy, nunca arrancó. **Fix**: `chmod o+rx` en el directorio y `chmod o+r` en el archivo (solo lectura para "otros", sin cambiar dueño). Nota: **esta permission se revirtió sola una vez** entre el primer chmod y el segundo intento de `docker compose up` — no se identificó la causa exacta (no hay cron/scheduler de Coolify que lo explique), así que si vuelve a pasar, re-aplicar el chmod inmediatamente antes de cada intento de traer el stack arriba.
+2. **Coolify regeneró `docker-compose.yaml` con `:latest`**: al fallar su propio redeploy, Coolify reescribió el compose file revirtiendo el pineo por SHA de `postiz` y `landing` a `:latest` — el riesgo ya documentado más abajo en este archivo ("Coolify sobreescribe routers.yaml") también aplica a `docker-compose.yaml` completo, no solo a routers. **Fix**: re-pinear a mano con el mismo `sed` que usa `build-push.yml` antes de cualquier `docker compose up` manual.
+3. **Falta la red externa `flofb07yh5gfcgxhw0ko0m1j`**: el compose declara esa red como `external: true` (Coolify normalmente la crea como parte de su propio flujo de deploy antes de invocar `docker compose up`); al quedar eliminada durante la limpieza del redeploy fallido, cualquier `docker compose up` manual falla con `network ... declared as external, but could not be found`. **Fix**: `docker network create flofb07yh5gfcgxhw0ko0m1j`.
+4. **`coolify-proxy` (Traefik) perdió la conexión a la red de la app**: tras recrear la red (punto 3) como un objeto nuevo, Traefik seguía conectado a la red vieja (ya destruida) y nunca se reconectó a la nueva — resultado: `502` en `app.miposting.com` incluso con todos los contenedores `healthy` y `routers.yaml` correcto. Normalmente Coolify conecta el proxy a la red de la app como parte de su propio flujo de deploy; al traer el stack arriba a mano, ese paso no ocurre. **Fix**: `docker network connect flofb07yh5gfcgxhw0ko0m1j coolify-proxy`.
+
+**Lección para la próxima vez que se dispare un restart/redeploy real desde Coolify (UI o API)**: si falla a medio camino, no asumir que solo hay que resolver el error visible en el log — verificar en orden: (a) contenedores realmente `healthy` y no solo `Created`, (b) imagen pineada al SHA correcto en `docker-compose.yaml`, (c) la red externa `flofb07yh5gfcgxhw0ko0m1j` existe, (d) `coolify-proxy` está conectado a esa red (`docker inspect coolify-proxy --format '{{json .NetworkSettings.Networks}}'`), y solo entonces confirmar `curl https://app.miposting.com/api/`.
+
 ## Coolify API & .env persistence (2026-07-13)
 
 ### Coolify API autoloader bug fixed
@@ -366,3 +379,21 @@ All 25 environment variables from `/data/coolify/applications/flofb07yh5gfcgxhw0
 **Method**: `PATCH /api/v1/applications/{uuid}/envs/bulk` with `data` array of `{key, value, is_runtime: true, ...}`
 
 **Result**: Variables survive fresh Coolify deployments; no manual `.env` file needed.
+
+## Coolify restart/redeploy roto — GitHub App `private_key` null (2026-09-12, RESUELTO)
+
+**Descubierto durante**: la puesta en marcha de PayPal en producción. Al intentar reiniciar el contenedor `postiz` vía el propio mecanismo de deploy de Coolify (UI o `POST /api/v1/applications/{uuid}/restart`, que internamente redepliega) para que tomara las nuevas env vars de `PAYMENT_GATEWAY`/`PAYPAL_*`, Coolify falló al generar el token de la GitHub App (`generateGithubToken()` lanza sobre un `private_key` null).
+
+**Impacto (mientras estuvo roto)**: cualquier acción que disparara el flujo de deploy propio de Coolify (restart desde su UI, restart vía API, o redeploy manual) fallaba. **No afectaba** al pipeline de CI/CD propio (`build-push.yml`), que despliega vía SSH directo sin pasar por Coolify.
+
+**Workaround usado en su momento**: se escribieron las env vars directamente en el `.env` del VPS (`sudo tee -a`, con aprobación explícita) y se recreó el contenedor `postiz` a mano (`docker compose up -d --no-deps postiz`), evitando el mecanismo de deploy de Coolify por completo.
+
+**Causa raíz real** (investigada 2026-09-12 vía `docker exec coolify-db psql` + lectura del código fuente de Coolify 4.1.2): la fila de `github_apps` (`id=1`, `name='miposting'`, `app_id=4277174`, `installation_id=146003184`) tenía `private_key_id=5`, pero esa fila **no existía** en `private_keys` (solo quedaban `id=6` y `id=7`) — una foreign key colgante, no un bug genérico de Coolify. `app/Models/GithubApp.php::privateKey()` es un `belongsTo` normal; al no existir la fila, devolvía `null`, y `bootstrap/helpers/github.php::generateGithubToken()` hacía `$source->privateKey->private_key` sin chequear null. No quedaba ninguna copia recuperable del `.pem` original en ningún lado (el campo usa cast `'encrypted'` de Laravel).
+
+**Fix aplicado**:
+1. Se generó una nueva private key para la GitHub App desde GitHub (Settings → Developer settings → GitHub Apps → `miposting` → Private keys → Generate) — no invalida el `installation_id` ni las keys previas.
+2. Se creó el registro en Coolify vía `docker exec coolify php artisan tinker` usando `App\Models\PrivateKey::create([...])` (nunca por `INSERT` SQL directo — el campo está cifrado con el cast `encrypted` de Laravel, y solo Eloquent lo maneja bien). Quedó como `private_keys.id=8`.
+3. Se re-vinculó la GitHub App: `App\Models\GithubApp::find(1)->update(['private_key_id' => 8])`.
+4. Verificado en caliente: `generateGithubJwt()` y `generateGithubInstallationToken()` (esta última hace la llamada real a la API de GitHub) ambas funcionan — GitHub aceptó el JWT firmado con la key nueva y devolvió un installation token real.
+
+**Nota operativa**: al copiar cualquier archivo de secretos a un contenedor de Coolify vía `docker cp`, el proceso PHP corre como `www-data` (uid 9999), no como el usuario por defecto de `docker exec` — si el archivo queda con permisos `600` de otro uid, `file_get_contents()` falla en silencio (retorna vacío) en vez de tirar un error claro. Hace falta `docker exec -u root <container> chown www-data:www-data <archivo>` antes de que la app lo pueda leer.

@@ -1,3 +1,4 @@
+import { COMING_SOON_PLANS } from '@gitroom/nestjs-libraries/integrations/social/disabled-providers.constant';
 import {
   AuthTokenDetails,
   PostDetails,
@@ -15,7 +16,7 @@ import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 export class MeweProvider extends SocialAbstract implements SocialProvider {
   identifier = 'mewe';
   name = 'MeWe';
-  allowedPlans = ['ULTIMATE'];
+  allowedPlans = COMING_SOON_PLANS;
   isBetweenSteps = false;
   scopes = [] as string[];
   editor = 'normal' as const;

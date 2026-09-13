@@ -1,3 +1,4 @@
+import { COMING_SOON_PLANS } from '@gitroom/nestjs-libraries/integrations/social/disabled-providers.constant';
 import {
   AnalyticsData,
   AuthTokenDetails,
@@ -18,7 +19,7 @@ import { hasExtension } from '@gitroom/helpers/utils/has.extension';
 export class ThreadsProvider extends SocialAbstract implements SocialProvider {
   identifier = 'threads';
   name = 'Threads';
-  allowedPlans = ['STANDARD', 'PRO', 'ULTIMATE'];
+  allowedPlans = COMING_SOON_PLANS;
   isBetweenSteps = false;
   scopes = [
     'threads_basic',

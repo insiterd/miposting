@@ -1,3 +1,4 @@
+import { COMING_SOON_PLANS } from '@gitroom/nestjs-libraries/integrations/social/disabled-providers.constant';
 import {
   AuthTokenDetails,
   PostDetails,
@@ -29,7 +30,7 @@ export class FarcasterProvider
 {
   identifier = 'wrapcast';
   name = 'Farcaster';
-  allowedPlans = ['ULTIMATE'];
+  allowedPlans = COMING_SOON_PLANS;
   isBetweenSteps = false;
   isWeb3 = true;
   scopes = [] as string[];
