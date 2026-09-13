@@ -365,9 +365,10 @@ export const MainBillingComponent: FC<{
               'Cancel Subscription'
             ))
           ) {
-            const checkDiscount = await (
-              await fetch('/billing/check-discount')
-            ).json();
+            const checkDiscount =
+              paymentGateway === 'stripe'
+                ? await (await fetch('/billing/check-discount')).json()
+                : { offerCoupon: false };
             if (checkDiscount.offerCoupon) {
               const info = await new Promise((res) => {
                 modal.openModal({
@@ -615,7 +616,8 @@ export const MainBillingComponent: FC<{
                       : 'Purchase'}
                   </Button>
                 )}
-                {subscription &&
+                {paymentGateway === 'stripe' &&
+                  subscription &&
                   currentPackage !== name.toUpperCase() &&
                   name !== 'FREE' &&
                   !!name && (
