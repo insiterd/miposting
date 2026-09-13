@@ -10,6 +10,7 @@ import { GetUserFromRequest } from '@gitroom/nestjs-libraries/user/user.from.req
 import { NotificationService } from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
 import { Request } from 'express';
 import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { assertStripeGateway } from '@gitroom/nestjs-libraries/services/payment/is-billing-enabled.util';
 
 @ApiTags('Billing')
 @Controller('/billing')
@@ -26,6 +27,7 @@ export class BillingController {
     @GetOrgFromRequest() org: Organization,
     @Param('id') body: string
   ) {
+    assertStripeGateway();
     return {
       status: await this._stripeService.checkSubscription(org.id, body),
     };
@@ -33,6 +35,7 @@ export class BillingController {
 
   @Get('/check-discount')
   async checkDiscount(@GetOrgFromRequest() org: Organization) {
+    assertStripeGateway();
     return {
       offerCoupon: !(await this._stripeService.checkDiscount(org.paymentId))
         ? false
@@ -42,11 +45,13 @@ export class BillingController {
 
   @Post('/apply-discount')
   async applyDiscount(@GetOrgFromRequest() org: Organization) {
+    assertStripeGateway();
     await this._stripeService.applyDiscount(org.paymentId);
   }
 
   @Post('/finish-trial')
   async finishTrial(@GetOrgFromRequest() org: Organization) {
+    assertStripeGateway();
     try {
       await this._stripeService.finishTrial(org.paymentId);
     } catch (err) {}
@@ -133,6 +138,7 @@ export class BillingController {
     @GetOrgFromRequest() org: Organization,
     @Body() body: BillingSubscribeDto
   ) {
+    assertStripeGateway();
     return this._stripeService.prorate(org.id, body);
   }
 
@@ -153,6 +159,7 @@ export class BillingController {
       throw new HttpException('Unauthorized', 400);
     }
 
+    assertStripeGateway();
     return this._stripeService.getCharges(org.id);
   }
 
@@ -166,6 +173,7 @@ export class BillingController {
       throw new HttpException('Unauthorized', 400);
     }
 
+    assertStripeGateway();
     return this._stripeService.refundCharges(org.id, body.chargeIds);
   }
 
@@ -183,6 +191,7 @@ export class BillingController {
 
   @Get('/chatbase-refund/preview')
   chatbaseRefundPreview(@GetOrgFromRequest() org: Organization) {
+    assertStripeGateway();
     return this._stripeService.chatbaseRefundPreview(org.id);
   }
 
@@ -191,6 +200,7 @@ export class BillingController {
     @GetUserFromRequest() user: User,
     @GetOrgFromRequest() org: Organization
   ) {
+    assertStripeGateway();
     const refund = await this._stripeService.chatbaseRefund(org.id);
 
     if (refund.refunded) {

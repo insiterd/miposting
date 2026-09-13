@@ -4,12 +4,18 @@ import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { Button } from '@gitroom/react/form/button';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 
 export const FinishTrial: FC<{ close: () => void }> = (props) => {
   const [finished, setFinished] = useState(false);
   const fetch = useFetch();
+  const { paymentGateway } = useVariables();
 
   const finishSubscription = useCallback(async () => {
+    if (paymentGateway !== 'stripe') {
+      setFinished(true);
+      return;
+    }
     await fetch('/billing/finish-trial', {
       method: 'POST',
     });
@@ -66,7 +72,9 @@ export const FinishTrial: FC<{ close: () => void }> = (props) => {
                 {finished && (
                   <div className="flex flex-col">
                     <div>
-                      You trial has been successfully finished and you have been charged.
+                      {paymentGateway === 'stripe'
+                        ? 'You trial has been successfully finished and you have been charged.'
+                        : 'This feature is only available with Stripe billing. Please upgrade your plan from the Billing page instead.'}
                     </div>
                     <div className="flex gap-[10px] mt-[20px]">
                       <Button className="flex-1" onClick={() => window.close()}>Close window</Button>

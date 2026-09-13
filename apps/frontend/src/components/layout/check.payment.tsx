@@ -4,6 +4,7 @@ import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { timer } from '@gitroom/helpers/utils/timer';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useDecisionModal } from '@gitroom/frontend/components/layout/new-modal';
+import { useVariables } from '@gitroom/react/helpers/variable.context';
 export const CheckPayment: FC<{
   check: string;
   mutate: () => void;
@@ -24,6 +25,7 @@ export const CheckPaymentInner: FC<{
   const fetch = useFetch();
   const toaster = useToaster();
   const modal = useDecisionModal();
+  const { paymentGateway } = useVariables();
 
   useEffect(() => {
     if (showLoader) {
@@ -40,6 +42,10 @@ export const CheckPaymentInner: FC<{
   }, [showLoader]);
 
   const checkSubscription = useCallback(async () => {
+    if (paymentGateway !== 'stripe') {
+      setShowLoader(false);
+      return;
+    }
     const { status } = await (
       await fetch('/billing/check/' + props.check)
     ).json();
