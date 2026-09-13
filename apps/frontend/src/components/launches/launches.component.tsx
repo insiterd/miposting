@@ -501,15 +501,16 @@ export const LaunchesComponent = () => {
     <DNDProvider>
       <Onboarding />
       <CalendarWeekProvider integrations={sortedIntegrations}>
+      <div className="flex flex-col lg:flex-row w-full gap-[1px] overflow-y-auto lg:overflow-visible">
         <div
           className={clsx(
-            'flex relative flex-col',
-            collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
+            'flex relative flex-col w-full',
+            collapseMenu === '1' ? 'group sidebar lg:w-[100px]' : 'lg:w-[260px]'
           )}
         >
           <div
             className={clsx(
-              'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all absolute start-0 top-0 w-full h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
+              'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all lg:absolute start-0 top-0 w-full lg:h-full overflow-x-hidden overflow-y-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor'
             )}
           >
             <div className="flex items-center">
@@ -596,12 +597,13 @@ export const LaunchesComponent = () => {
             </div>
           </div>
         </div>
-        <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
+        <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px] min-h-[560px] lg:min-h-0">
           <Filters />
           <div className="flex-1 flex">
             <Calendar />
           </div>
         </div>
+      </div>
       </CalendarWeekProvider>
     </DNDProvider>
   );
