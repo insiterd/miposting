@@ -113,11 +113,11 @@ export const ThirdPartyComponent = () => {
   const [collapseMenu, setCollapseMenu] = useCookie('collapseMenu', '0');
 
   return (
-    <>
+    <div className="flex flex-col lg:flex-row w-full gap-[1px]">
       <div
         className={clsx(
-          'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all',
-          collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
+          'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all w-full',
+          collapseMenu === '1' ? 'group sidebar lg:w-[100px]' : 'lg:w-[260px]'
         )}
       >
         <div className="flex gap-[12px] flex-col">
@@ -203,6 +203,6 @@ export const ThirdPartyComponent = () => {
       <div className="bg-newBgColorInner flex-1 flex-col flex p-[20px] gap-[12px]">
         <ThirdPartyListComponent reload={mutate} />
       </div>
-    </>
+    </div>
   );
 };

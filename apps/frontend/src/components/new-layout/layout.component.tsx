@@ -33,6 +33,7 @@ import { Impersonate } from '@gitroom/frontend/components/layout/impersonate';
 import { AnnouncementBanner } from '@gitroom/frontend/components/layout/announcement.banner';
 import { Title } from '@gitroom/frontend/components/layout/title';
 import { TopMenu } from '@gitroom/frontend/components/layout/top.menu';
+import { MobileBottomNav } from '@gitroom/frontend/components/new-layout/mobile.bottom.nav';
 import { LanguageComponent } from '@gitroom/frontend/components/layout/language.component';
 import { ChromeExtensionComponent } from '@gitroom/frontend/components/layout/chrome.extension.component';
 import NotificationComponent from '@gitroom/frontend/components/notifications/notification.component';
@@ -102,7 +103,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                   <AnnouncementBanner />
                   <div className="flex-1 flex gap-[8px]">
                     <Support />
-                    <div className="flex flex-col bg-newBgColorInner w-[80px] rounded-[12px]">
+                    <div className="hidden lg:flex flex-col bg-newBgColorInner w-[80px] rounded-[12px]">
                       <div
                         id="left-menu"
                         className={clsx(
@@ -120,12 +121,13 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex-1 bg-newBgLineColor rounded-[12px] overflow-hidden flex flex-col gap-[1px] blurMe">
-                      <div className="flex bg-newBgColorInner h-[80px] px-[20px] items-center">
-                        <div className="text-[24px] font-[600] flex flex-1">
+                    <MobileBottomNav />
+                    <div className="flex-1 bg-newBgLineColor rounded-[12px] overflow-y-auto overflow-x-hidden lg:overflow-hidden flex flex-col gap-[1px] blurMe pb-[70px] lg:pb-0">
+                      <div className="flex bg-newBgColorInner h-[80px] px-[12px] lg:px-[20px] items-center">
+                        <div className="text-[16px] lg:text-[24px] font-[600] flex flex-1">
                           <Title />
                         </div>
-                        <div className="flex gap-[20px] text-textItemBlur">
+                        <div className="flex gap-[12px] lg:gap-[20px] text-textItemBlur overflow-x-auto flex-nowrap">
                           <StreakComponent />
                           <div className="w-[1px] h-[20px] bg-blockSeparator" />
                           <OrganizationSelector />
@@ -140,7 +142,7 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                           <NotificationComponent />
                         </div>
                       </div>
-                      <div className="flex flex-1 gap-[1px]">{children}</div>
+                      <div className="flex flex-1 gap-[1px] overflow-x-auto">{children}</div>
                     </div>
                   </div>
                 </>

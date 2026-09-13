@@ -107,11 +107,11 @@ export const AgentList: FC<{ onChange: (arr: any[]) => void }> = ({
   return (
     <div
       className={clsx(
-        'trz bg-newBgColorInner flex flex-col gap-[15px] transition-all relative',
-        collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
+        'trz bg-newBgColorInner flex flex-col gap-[15px] transition-all relative w-full',
+        collapseMenu === '1' ? 'group sidebar lg:w-[100px]' : 'lg:w-[260px]'
       )}
     >
-      <div className="absolute top-0 start-0 w-full h-full p-[20px] overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
+      <div className="lg:absolute top-0 start-0 w-full h-full p-[20px] overflow-auto scrollbar scrollbar-thumb-fifth scrollbar-track-newBgColor">
         <div className="flex items-center">
           <h2 className="group-[.sidebar]:hidden flex-1 text-[20px] font-[500] mb-[15px]">
             {t('select_channels', 'Select Channels')}
@@ -202,9 +202,11 @@ export const Agent: FC<{ children: ReactNode }> = ({ children }) => {
 
   return (
     <PropertiesContext.Provider value={{ properties }}>
-      <AgentList onChange={setProperties} />
-      <div className="bg-newBgColorInner flex flex-1">{children}</div>
-      <Threads />
+      <div className="flex flex-col lg:flex-row w-full gap-[1px]">
+        <AgentList onChange={setProperties} />
+        <div className="bg-newBgColorInner flex flex-1">{children}</div>
+        <Threads />
+      </div>
     </PropertiesContext.Provider>
   );
 };
@@ -224,7 +226,7 @@ const Threads: FC = () => {
   return (
     <div
       className={clsx(
-        'trz bg-newBgColorInner flex flex-col gap-[15px] transition-all relative',
+        'trz hidden lg:flex bg-newBgColorInner flex-col gap-[15px] transition-all relative',
         'w-[260px]'
       )}
     >
@@ -250,7 +252,7 @@ const Threads: FC = () => {
                 strokeLinejoin="round"
               />
             </svg>
-            <div className="flex-1 text-start text-[16px] group-[.sidebar]:hidden">
+            <div className="flex-1 min-w-0 truncate text-start text-[16px] group-[.sidebar]:hidden">
               {t('start_a_new_chat', 'Start a new chat')}
             </div>
           </Link>

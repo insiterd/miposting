@@ -116,14 +116,14 @@ export const SettingsPopup: FC<{
   }, []);
 
   return (
-    <>
-      <div className="bg-newBgColorInner p-[20px] flex flex-col transition-all w-[260px]">
-        <div className="flex flex-1 flex-col gap-[15px]">
+    <div className="flex flex-col lg:flex-row w-full gap-[1px]">
+      <div className="bg-newBgColorInner p-[20px] flex flex-col transition-all w-full lg:w-[260px]">
+        <div className="flex flex-row lg:flex-col overflow-x-auto lg:overflow-visible flex-1 gap-[15px]">
           {list.map(({ tab: tabKey, label }) => (
             <div
               key={tabKey}
               className={clsx(
-                'cursor-pointer flex items-center gap-[12px] group/profile hover:bg-boxHover rounded-e-[8px]',
+                'cursor-pointer flex items-center gap-[12px] shrink-0 whitespace-nowrap group/profile hover:bg-boxHover rounded-e-[8px]',
                 tabKey === tab && 'bg-boxHover'
               )}
               onClick={() => setTab(tabKey)}
@@ -213,7 +213,7 @@ export const SettingsPopup: FC<{
           </form>
         </FormProvider>
       </div>
-    </>
+    </div>
   );
 };
 export const SettingsComponent = () => {
