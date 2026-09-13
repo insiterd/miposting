@@ -9,6 +9,7 @@ import {
   UseFilters,
 } from '@nestjs/common';
 import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
+import { isBillingEnabled } from '@gitroom/nestjs-libraries/services/payment/is-billing-enabled.util';
 import { ConnectIntegrationDto } from '@gitroom/nestjs-libraries/dtos/integrations/connect.integration.dto';
 import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
@@ -74,10 +75,7 @@ export class NoAuthIntegrationsController {
 
     const org = await this._organizationService.getOrgById(organization);
 
-    if (
-      integrationProvider.allowedPlans?.length &&
-      process.env.STRIPE_PUBLISHABLE_KEY
-    ) {
+    if (integrationProvider.allowedPlans?.length && isBillingEnabled()) {
       const subscription =
         await this._subscriptionService.getSubscriptionByOrganizationId(
           org.id
@@ -222,7 +220,7 @@ export class NoAuthIntegrationsController {
     }
 
     if (
-      process.env.STRIPE_PUBLISHABLE_KEY &&
+      isBillingEnabled() &&
       org.isTrailing &&
       (await this._integrationService.checkPreviousConnections(
         org.id,

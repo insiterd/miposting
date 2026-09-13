@@ -6,6 +6,7 @@ import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/po
 import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 import dayjs from 'dayjs';
 import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
+import { isBillingEnabled } from '@gitroom/nestjs-libraries/services/payment/is-billing-enabled.util';
 import { AuthorizationActions, Sections } from './permission.exception.class';
 
 export type AppAbility = Ability<[AuthorizationActions, Sections]>;
@@ -24,7 +25,7 @@ export class PermissionsService {
 
     const tier =
       subscription?.subscriptionTier ||
-      (!process.env.STRIPE_PUBLISHABLE_KEY ? 'PRO' : 'FREE');
+      (!isBillingEnabled() ? 'PRO' : 'FREE');
 
     const { channel, ...all } = pricing[tier];
     return {
@@ -47,10 +48,7 @@ export class PermissionsService {
       Ability<[AuthorizationActions, Sections]>
     >(Ability as AbilityClass<AppAbility>);
 
-    if (
-      requestedPermission.length === 0 ||
-      !process.env.STRIPE_PUBLISHABLE_KEY
-    ) {
+    if (requestedPermission.length === 0 || !isBillingEnabled()) {
       for (const [action, section] of requestedPermission) {
         can(action, section);
       }
