@@ -1,3 +1,4 @@
+import { COMING_SOON_PLANS } from '@gitroom/nestjs-libraries/integrations/social/disabled-providers.constant';
 import { createHash, randomBytes } from 'crypto';
 import {
   AuthTokenDetails,
@@ -16,7 +17,7 @@ import { Tool } from '@gitroom/nestjs-libraries/integrations/tool.decorator';
 export class WhopProvider extends SocialAbstract implements SocialProvider {
   identifier = 'whop';
   name = 'Whop';
-  allowedPlans = ['ULTIMATE'];
+  allowedPlans = COMING_SOON_PLANS;
   isBetweenSteps = false;
   scopes = ['openid', 'profile', 'email', 'forum:post:create', 'forum:read', 'company:basic:read'];
   refreshCron = false;

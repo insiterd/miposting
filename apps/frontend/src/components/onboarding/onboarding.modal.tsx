@@ -9,6 +9,7 @@ import SafeImage from '@gitroom/react/helpers/safe.image';
 import { AddProviderComponent } from '@gitroom/frontend/components/launches/add.provider.component';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
+import { useUser } from '@gitroom/frontend/components/layout/user.context';
 
 interface OnboardingModalProps {
   onClose: () => void;
@@ -115,10 +116,14 @@ const OnboardingStep1: FC<{ onNext: () => void; onSkip: () => void }> = ({
 }) => {
   const fetch = useFetch();
   const t = useT();
+  const user = useUser();
 
   const getIntegrations = useCallback(async () => {
-    return (await fetch('/integrations')).json();
-  }, []);
+    const tier = user?.tier?.current || '';
+    return (
+      await fetch(`/integrations${tier ? `?tier=${tier}` : ''}`)
+    ).json();
+  }, [user]);
 
   const load = useCallback(async (path: string) => {
     const list = (await (await fetch(path)).json()).integrations;

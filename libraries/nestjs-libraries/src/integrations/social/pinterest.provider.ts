@@ -1,3 +1,4 @@
+import { COMING_SOON_PLANS } from '@gitroom/nestjs-libraries/integrations/social/disabled-providers.constant';
 import {
   AnalyticsData,
   AuthTokenDetails,
@@ -29,7 +30,7 @@ export class PinterestProvider
 {
   identifier = 'pinterest';
   name = 'Pinterest';
-  allowedPlans = ['PRO', 'ULTIMATE'];
+  allowedPlans = COMING_SOON_PLANS;
   isBetweenSteps = false;
   scopes = [
     'boards:read',

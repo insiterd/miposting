@@ -18,7 +18,7 @@ export default function HeroHome() {
             </h1>
             <div className="mx-auto max-w-3xl">
               <p className="mb-8 text-lg text-gray-700" data-aos="zoom-y-out" data-aos-delay={300}>
-                Programa, publica y analiza contenido en 28+ plataformas sociales. 
+                Programa, publica y analiza contenido en Facebook, Instagram, LinkedIn, TikTok y YouTube.
                 La herramienta todo-en-uno para agencias de marketing en República Dominicana.
               </p>
               <div className="relative before:absolute before:inset-0 before:border-y before:[border-image:linear-gradient(to_right,transparent,--theme(--color-slate-300/.8),transparent)1]">

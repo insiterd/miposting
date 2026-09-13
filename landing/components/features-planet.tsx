@@ -13,8 +13,8 @@ export default function FeaturesPlanet() {
       icon: "sparkles",
     },
     {
-      title: "28+ Plataformas",
-      desc: "Instagram, TikTok, LinkedIn, X, YouTube, Facebook, Threads, Pinterest y más. Todas desde un solo panel.",
+      title: "Múltiples Plataformas",
+      desc: "Facebook, Instagram, LinkedIn, TikTok y YouTube desde un solo panel, con más plataformas en camino.",
       icon: "grid",
     },
     {

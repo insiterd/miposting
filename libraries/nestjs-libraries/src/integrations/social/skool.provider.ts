@@ -1,3 +1,4 @@
+import { COMING_SOON_PLANS } from '@gitroom/nestjs-libraries/integrations/social/disabled-providers.constant';
 import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
 import { SocialAbstract } from '../social.abstract';
 import {
@@ -16,7 +17,7 @@ import { AuthService } from '@gitroom/helpers/auth/auth.service';
 export class SkoolProvider extends SocialAbstract implements SocialProvider {
   identifier = 'skool';
   name = 'Skool';
-  allowedPlans = ['ULTIMATE'];
+  allowedPlans = COMING_SOON_PLANS;
   isBetweenSteps = false;
   isChromeExtension = true;
   scopes = [] as string[];

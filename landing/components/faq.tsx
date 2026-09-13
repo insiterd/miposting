@@ -13,7 +13,7 @@ const faqs = [
   },
   {
     q: "¿Qué plataformas soporta?",
-    a: "Soporta más de 28 plataformas incluyendo Instagram, TikTok, LinkedIn, X (Twitter), YouTube, Facebook, Threads, Pinterest, Dribbble, Discord, Slack, Telegram, Reddit, y más.",
+    a: "Actualmente soporta Facebook, Instagram, LinkedIn, TikTok y YouTube, con más plataformas agregándose próximamente.",
   },
   {
     q: "¿Puedo invitar a mi equipo?",

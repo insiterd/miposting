@@ -57,7 +57,7 @@ export const pricing: PricingInterface = {
     webhooks: 2,
     autoPost: false,
     generate_videos: 3,
-    networks: ['X', 'LinkedIn', 'LinkedIn Page', 'Instagram', 'Instagram Standalone', 'Facebook', 'Threads'],
+    networks: ['Facebook', 'Instagram', 'Instagram Standalone'],
   },
   PRO: {
     current: 'PRO',
@@ -76,7 +76,7 @@ export const pricing: PricingInterface = {
     webhooks: 30,
     autoPost: true,
     generate_videos: 30,
-    networks: ['X', 'LinkedIn', 'LinkedIn Page', 'Instagram', 'Instagram Standalone', 'Facebook', 'Threads', 'YouTube', 'GMB', 'TikTok', 'Pinterest', 'Dribbble', 'Reddit', 'Discord', 'Slack', 'Telegram', 'Medium', 'DevTo', 'Hashnode', 'Wordpress'],
+    networks: ['Facebook', 'Instagram', 'Instagram Standalone', 'LinkedIn', 'LinkedIn Page'],
   },
   ULTIMATE: {
     current: 'ULTIMATE',
@@ -95,7 +95,7 @@ export const pricing: PricingInterface = {
     webhooks: 10000,
     autoPost: true,
     generate_videos: 60,
-    networks: ['X', 'LinkedIn', 'LinkedIn Page', 'Instagram', 'Instagram Standalone', 'Facebook', 'Threads', 'YouTube', 'GMB', 'TikTok', 'Pinterest', 'Dribbble', 'Reddit', 'Discord', 'Slack', 'Telegram', 'Medium', 'DevTo', 'Hashnode', 'Wordpress', 'Kick', 'Twitch', 'Mastodon', 'Bluesky', 'Lemmy', 'Farcaster', 'Nostr', 'Vk', 'Listmonk', 'Moltbook', 'Whop', 'Skool', 'Mewe'],
+    networks: ['Facebook', 'Instagram', 'Instagram Standalone', 'LinkedIn', 'LinkedIn Page', 'TikTok', 'YouTube'],
   },
 };
 

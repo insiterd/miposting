@@ -11,7 +11,7 @@ const inter = Inter({
 export const metadata = {
   title: "miposting — Gestiona tus redes sociales desde un solo lugar",
   description:
-    "Programa, publica y analiza contenido en 28+ plataformas sociales. La herramienta todo-en-uno para agencias de marketing en República Dominicana.",
+    "Programa, publica y analiza contenido en Facebook, Instagram, LinkedIn, TikTok y YouTube. La herramienta todo-en-uno para agencias de marketing en República Dominicana.",
   icons: {
     icon: "/miposting-favi.png",
   },

@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "postiz-dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["run", "dev-backend"],
+      "port": 4200
+    },
+    {
+      "name": "landing-dev",
+      "runtimeExecutable": "make",
+      "runtimeArgs": ["dev-landing"],
+      "port": 8030
+    }
+  ]
+}
