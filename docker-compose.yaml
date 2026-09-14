@@ -181,10 +181,9 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
-    configs:
-      - source: temporal_dynamic_config
-        target: /etc/temporal/config/dynamicconfig/development-sql.yaml
-        mode: 0444
+    user: "0:0"
+    volumes:
+      - ./dynamicconfig:/etc/temporal/config/dynamicconfig
 
   temporal-ui:
     container_name: temporal-ui
@@ -234,8 +233,3 @@ networks:
   temporal-network:
     driver: bridge
     name: temporal-network
-
-configs:
-  temporal_dynamic_config:
-    name: temporal_dynamic_config
-    file: ./dynamicconfig/development-sql.yaml
