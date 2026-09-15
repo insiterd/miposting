@@ -53,8 +53,12 @@ jobs:
             ${{ env.POSTIZ_IMAGE }}:latest
           build-args: |
             NEXT_PUBLIC_VERSION=${{ github.sha }}
-          cache-from: type=registry,ref=${{ env.POSTIZ_IMAGE }}:cache
-          cache-to: type=registry,ref=${{ env.POSTIZ_IMAGE }}:cache,mode=max
+          cache-from: |
+            type=registry,ref=${{ env.POSTIZ_IMAGE }}:cache
+            type=gha
+          cache-to: |
+            type=registry,ref=${{ env.POSTIZ_IMAGE }}:cache,mode=max
+            type=gha,mode=max
 
   build-landing:
     runs-on: ubuntu-latest
