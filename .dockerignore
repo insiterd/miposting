@@ -8,12 +8,15 @@ docker-data/*
 dist
 .nx
 /apps/frontend/.next
+/landing/.next
+/landing/out
 /apps/backend/dist
 /apps/workers/dist
 /apps/cron/dist
 /apps/commands/dist
 .devcontainer
 **/.git
+.claude
 **/*.md
 **/LICENSE
 **/npm-debug.log
