@@ -50,7 +50,7 @@ const plans = [
     ],
     included: networks.standard,
     cta: "Probar 7 Días Gratis",
-    href: "https://app.miposting.com/register",
+    href: "https://app.miposting.com",
     featured: false,
   },
   {
@@ -68,7 +68,7 @@ const plans = [
     ],
     included: [...networks.standard, ...networks.pro],
     cta: "Probar 7 Días Gratis",
-    href: "https://app.miposting.com/register",
+    href: "https://app.miposting.com",
     featured: true,
   },
   {
@@ -86,7 +86,7 @@ const plans = [
     ],
     included: [...networks.standard, ...networks.pro, ...networks.ultimate],
     cta: "Probar 7 Días Gratis",
-    href: "https://app.miposting.com/register",
+    href: "https://app.miposting.com",
     featured: false,
   },
 ];
