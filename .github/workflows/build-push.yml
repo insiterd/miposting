@@ -135,7 +135,23 @@ jobs:
             echo "SHA previo desplegado: $PREV_SHA"
           fi
 
+          diagnostics() {
+            echo "=== DIAGNOSTICO (antes del rollback, que recrea los contenedores) ==="
+            echo "--- docker ps (postiz/temporal) ---"
+            docker ps -a --filter "name=postiz" --filter "name=temporal" --format 'table {{.Names}}\t{{.Status}}' || true
+            echo "--- pm2 list (postiz) ---"
+            docker exec "$(docker ps -q -f 'label=com.docker.compose.service=postiz')" pm2 list || true
+            echo "--- docker logs postiz (ultimas 150 lineas) ---"
+            docker logs --tail 150 "$(docker ps -q -f 'label=com.docker.compose.service=postiz')" 2>&1 || true
+            echo "--- disco ---"
+            df -h / /var/lib/docker 2>/dev/null || true
+            echo "--- memoria ---"
+            free -m || true
+            echo "=== FIN DIAGNOSTICO ==="
+          }
+
           rollback() {
+            diagnostics
             if [ -z "$PREV_SHA" ]; then
               echo "!!! Sin SHA previo conocido: NO se revierte. Revisar el VPS a mano."
               return 0
@@ -191,18 +207,18 @@ jobs:
           echo "=== Waiting for NestJS backend to be ready... ==="
           POSTIZ_CONTAINER=$(docker ps -q -f "label=com.docker.compose.service=postiz")
           BACKEND_READY=false
-          for i in $(seq 1 12); do
+          for i in $(seq 1 36); do
             BACKEND_OK=$(docker exec "$POSTIZ_CONTAINER" bash -c "timeout 3 cat < /dev/null > /dev/tcp/127.0.0.1/3000" 2>/dev/null && echo "ok" || echo "no")
             if [ "$BACKEND_OK" = "ok" ]; then
               echo "Backend ready!"
               BACKEND_READY=true
               break
             fi
-            echo "  backend attempt $i/12"
+            echo "  backend attempt $i/36"
             sleep 5
           done
           if [ "$BACKEND_READY" != true ]; then
-            echo "ERROR: NestJS no escucha en :3000 tras 60s"
+            echo "ERROR: NestJS no escucha en :3000 tras 180s"
             rollback
             exit 1
           fi
