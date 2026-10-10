@@ -709,6 +709,32 @@ model mastra_ai_spans {
   createdAtZ   DateTime? @default(now()) @db.Timestamptz(6)
   updatedAtZ   DateTime? @default(now()) @db.Timestamptz(6)
 
+  // Columnas que @mastra/pg crea por su cuenta. Si faltan aqui, `prisma db push` (que corre en
+  // cada arranque del contenedor) las borra y Mastra las recrea; las borradas siguen contando
+  // para el tope de 1600 columnas de Postgres y terminan impidiendo que el backend arranque.
+  entityType       String?
+  entityId         String?
+  entityName       String?
+  parentEntityType String?
+  parentEntityId   String?
+  parentEntityName String?
+  rootEntityType   String?
+  rootEntityId     String?
+  rootEntityName   String?
+  userId           String?
+  organizationId   String?
+  resourceId       String?
+  runId            String?
+  sessionId        String?
+  threadId         String?
+  requestId        String?
+  environment      String?
+  serviceName      String?
+  experimentId     String?
+  source           String?
+  tags             Json?
+  requestContext   Json?
+
   @@index([name], map: "public_mastra_ai_spans_name_idx")
   @@index([parentSpanId, startedAt(sort: Desc)], map: "public_mastra_ai_spans_parentspanid_startedat_idx")
   @@index([spanType, startedAt(sort: Desc)], map: "public_mastra_ai_spans_spantype_startedat_idx")
@@ -792,6 +818,7 @@ model mastra_scorers {
   createdAtZ           DateTime? @default(now()) @db.Timestamptz(6)
   updatedAtZ           DateTime? @default(now()) @db.Timestamptz(6)
   spanId               String?
+  requestContext       Json? // creada por @mastra/pg; ver nota en mastra_ai_spans
 
   @@index([traceId, spanId, createdAt(sort: Desc)], map: "public_mastra_scores_trace_id_span_id_created_at_idx")
 }

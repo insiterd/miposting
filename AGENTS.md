@@ -145,7 +145,7 @@ All apps load root `.env` explicitly: `dotenv -e ../../.env`. No auto-detection.
 
 El CI/CD build-push.yml hace:
 1. Build + push a GHCR (dos jobs paralelos: postiz, landing)
-2. Deploy via SSH al VPS: `preflight sudo → pin imágenes → pull → up -d --no-deps → healthcheck loop → backend :3000 → fix routers.yaml → restart coolify-proxy → verify endpoints (12×5s)`
+2. Deploy via SSH al VPS: `preflight sudo → pin imágenes → pull → up -d --no-deps → healthcheck loop → backend :3000 → sonda interna nginx→backend → fix routers.yaml → restart coolify-proxy → verify endpoints (20×5s)`
 
 El workflow lleva `concurrency: deploy-production` con `cancel-in-progress: false`, así que los deploys se encolan en vez de competir por el mismo compose del VPS.
 
@@ -157,9 +157,10 @@ El script remoto usa `sudo` para `chmod`/`sed`/`tee` sobre `/data/coolify/...`. 
 
 El script guarda el SHA actualmente desplegado (`PREV_SHA`) antes de pinear el nuevo. Si cualquiera de estos gates falla, revierte el compose a `PREV_SHA`, levanta de nuevo los contenedores y sale con error:
 
-1. **Contenedores healthy** (30×3s) — antes el bucle no abortaba si nunca llegaban a healthy.
-2. **Backend en `:3000`** — es el puerto de NestJS. Antes sondeaba `:5000`, que es **nginx**: respondía aunque NestJS estuviera caído.
-3. **Endpoints externos** (12×5s) — `https://app.miposting.com/api/` debe devolver `App is running!` (RootController vía nginx). **No usar `/api/health`**: nginx lo sintetiza con un `return 200` fijo (`var/docker/nginx.conf`) y pasa siempre, backend vivo o no.
+1. **Contenedores healthy** (60×3s = 180s) — antes el bucle no abortaba si nunca llegaban a healthy. Subido desde 90s (2026-10-10): con el VPS justo de memoria el arranque tarda 60-120s.
+2. **Backend en `:3000`** (60×5s = 300s) — es el puerto de NestJS. Antes sondeaba `:5000`, que es **nginx**: respondía aunque NestJS estuviera caído.
+2b. **Sonda interna nginx→backend** (24×5s) — `curl localhost:5000/api/` dentro del contenedor, antes de involucrar a Traefik. Separa "la app no responde" de "falla la ruta externa/ACME".
+3. **Endpoints externos** (20×5s, `--max-time` 15s) — `https://app.miposting.com/api/` debe devolver `App is running!` (RootController vía nginx). **No usar `/api/health`**: nginx lo sintetiza con un `return 200` fijo (`var/docker/nginx.conf`) y pasa siempre, backend vivo o no.
 
 Si `PREV_SHA` no se puede determinar (p. ej. el compose tiene `:latest`), el rollback se desactiva y el log lo avisa en vez de fallar en silencio.
 
@@ -178,6 +179,7 @@ Si `PREV_SHA` no se puede determinar (p. ej. el compose tiene `:latest`), el rol
 - **Los nombres de container cambian en cada recreate** — el sufijo numérico (e.g. `-022131340838`) varía. Usar labels (`com.docker.compose.service`) para identificar containers, no nombres estáticos.
 - **Traefik no refresca rutas automáticamente** — siempre ejecutar `docker restart coolify-proxy` al final del deploy. Docker provider no siempre actualiza routers cuando cambia el container ID.
 - **Coolify sobreescribe `routers.yaml`** — el CI/CD verifica y corrige automáticamente si Coolify regenera el archivo con el nombre viejo `postiz-api`.
+- **`tables can have at most 1600 columns` al arrancar el backend (`MASTRA_STORAGE_PG_ALTER_TABLE_FAILED`)** — pasó el 2026-10-10 y tumbó 1 deploy. Causa: `prisma db push --accept-data-loss` corre en **cada arranque** del contenedor (`pm2-run`) y borra las columnas que `@mastra/pg` crea y que `schema.prisma` no declara; Mastra las recrea y las borradas siguen contando para el tope de Postgres. Se arregló declarando en `schema.prisma` las 22 columnas extra de `mastra_ai_spans` y `requestContext` de `mastra_scorers`. **Si se actualiza `@mastra/pg`** y añade columnas nuevas, hay que declararlas igual. Comprobar con `prisma migrate diff --from-url <copia del esquema de prod> --to-schema-datamodel schema.prisma --script`: no debe haber ningún `DROP COLUMN`. Vigilar con la consulta de `pg_attribute` (attnums por tabla `mastra_%`): no debe crecer entre arranques. Si ya se llegó al tope y la tabla está vacía: `DROP TABLE mastra_ai_spans` y dejar que Mastra la recree. Quedan sin resolver (inocuos para el tope) el DROP/CREATE en cada arranque de ~21 tablas `mastra_*` vacías, 5 índices y la PK; la solución de fondo sería aislar Mastra en su propio esquema Postgres.
 
 ### Healthcheck loop
 

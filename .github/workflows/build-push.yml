@@ -137,16 +137,34 @@ jobs:
 
           diagnostics() {
             echo "=== DIAGNOSTICO (antes del rollback, que recrea los contenedores) ==="
+            # -a: incluye contenedores parados o reiniciandose; con -q a secas el ID salia
+            # vacio y 'docker logs ""' fallaba en silencio (el diagnostico quedaba sin logs).
+            DIAG_ID=$(docker ps -aq -f 'label=com.docker.compose.service=postiz' | head -1)
+            NOISE='RouterExplorer|RoutesResolver|InstanceLoader|webpack|modules by|optional modules|runtime modules|__temporal|asset workflow|Workflow bundle'
             echo "--- docker ps (postiz/temporal) ---"
             docker ps -a --filter "name=postiz" --filter "name=temporal" --format 'table {{.Names}}\t{{.Status}}' || true
+            echo "--- contenedor nuevo: estado, reinicios, salud y redes ---"
+            docker inspect --format 'estado={{.State.Status}} reinicios={{.RestartCount}} salud={{if .State.Health}}{{.State.Health.Status}}{{end}} inicio={{.State.StartedAt}}' "$DIAG_ID" 2>&1 || true
+            docker inspect --format '{{range $k, $v := .NetworkSettings.Networks}}{{$k}}={{$v.IPAddress}} {{end}}' "$DIAG_ID" 2>&1 || true
             echo "--- pm2 list (postiz) ---"
-            docker exec "$(docker ps -q -f 'label=com.docker.compose.service=postiz')" pm2 list || true
-            echo "--- docker logs postiz (ultimas 150 lineas) ---"
-            docker logs --tail 150 "$(docker ps -q -f 'label=com.docker.compose.service=postiz')" 2>&1 || true
+            docker exec "$DIAG_ID" pm2 list || true
+            echo "--- sondas internas del contenedor (nginx :5000, backend :3000, frontend :4200) ---"
+            docker exec "$DIAG_ID" bash -c 'for u in http://localhost:5000/ http://localhost:5000/api/ http://localhost:4200/auth http://localhost:3000/; do printf "%s -> " "$u"; curl -s -o /dev/null -m 10 -w "%{http_code} %{time_total}s\n" "$u" || echo fallo; done' 2>&1 || true
+            echo "--- logs de pm2 (backend/frontend/orchestrator, sin ruido de rutas) ---"
+            docker exec "$DIAG_ID" bash -c 'pm2 logs --nostream --lines 120 2>&1' 2>&1 | grep -avE "$NOISE" | tail -80 || true
+            echo "--- docker logs postiz (filtrados, ultimas 60 lineas) ---"
+            docker logs --tail 600 "$DIAG_ID" 2>&1 | grep -avE "$NOISE" | tail -60 || true
+            echo "--- coolify-proxy (errores recientes) ---"
+            docker logs --tail 100 coolify-proxy 2>&1 | grep -aiE "error|acme|certificate|app\.miposting|postiz" | tail -20 || true
+            echo "--- sonda externa a la API ---"
+            curl -sS -o /dev/null -m 15 -w 'https://app.miposting.com/api/ http=%{http_code} ssl=%{ssl_verify_result} t=%{time_total}s\n' https://app.miposting.com/api/ 2>&1 || true
+            echo "--- procesos que mas memoria usan ---"
+            ps aux --sort=-rss | head -8 | cut -c1-150 || true
+            echo "--- carga y memoria ---"
+            uptime || true
+            free -m || true
             echo "--- disco ---"
             df -h / /var/lib/docker 2>/dev/null || true
-            echo "--- memoria ---"
-            free -m || true
             echo "=== FIN DIAGNOSTICO ==="
           }
 
@@ -183,7 +201,9 @@ jobs:
 
           echo "=== Waiting for containers to be healthy... ==="
           CONTAINERS_HEALTHY=false
-          for i in $(seq 1 30); do
+          # 60x3s = 180s: con el VPS justo de memoria el contenedor tarda 60-120s en
+          # arrancar (60s de start_period del healthcheck mas el arranque de los 3 procesos).
+          for i in $(seq 1 60); do
             POSTIZ_ID=$(docker ps -q -f "label=com.docker.compose.service=postiz")
             LANDING_ID=$(docker ps -q -f "label=com.docker.compose.service=postiz-landing")
             HEALTH=$(docker inspect --format='{{.State.Health.Status}}' "$POSTIZ_ID" 2>/dev/null || echo "n/a")
@@ -197,7 +217,7 @@ jobs:
             sleep 3
           done
           if [ "$CONTAINERS_HEALTHY" != true ]; then
-            echo "ERROR: los contenedores no llegaron a healthy en 90s (postiz: $HEALTH, landing: $LANDING_HEALTH)"
+            echo "ERROR: los contenedores no llegaron a healthy en 180s (postiz: $HEALTH, landing: $LANDING_HEALTH)"
             rollback
             exit 1
           fi
@@ -207,18 +227,41 @@ jobs:
           echo "=== Waiting for NestJS backend to be ready... ==="
           POSTIZ_CONTAINER=$(docker ps -q -f "label=com.docker.compose.service=postiz")
           BACKEND_READY=false
-          for i in $(seq 1 36); do
+          # 60x5s = 300s. El arranque normal son ~60-75s, pero el primer arranque tras
+          # cambios de esquema (Mastra recrea tablas) o con el VPS sin memoria libre
+          # puede pasar de 180s; revertir antes de tiempo solo agrava la caida.
+          for i in $(seq 1 60); do
             BACKEND_OK=$(docker exec "$POSTIZ_CONTAINER" bash -c "timeout 3 cat < /dev/null > /dev/tcp/127.0.0.1/3000" 2>/dev/null && echo "ok" || echo "no")
             if [ "$BACKEND_OK" = "ok" ]; then
               echo "Backend ready!"
               BACKEND_READY=true
               break
             fi
-            echo "  backend attempt $i/36"
+            echo "  backend attempt $i/60"
             sleep 5
           done
           if [ "$BACKEND_READY" != true ]; then
-            echo "ERROR: NestJS no escucha en :3000 tras 180s"
+            echo "ERROR: NestJS no escucha en :3000 tras 300s"
+            rollback
+            exit 1
+          fi
+
+          # Sonda interna nginx -> backend, antes de involucrar a Traefik. Si esto falla,
+          # el problema es la app (no la ruta externa); si pasa y los endpoints publicos
+          # fallan, el problema es Traefik/ACME. El diagnostico lo deja claro en ambos casos.
+          echo "=== Waiting for nginx -> backend inside the container... ==="
+          INTERNAL_OK=false
+          for i in $(seq 1 24); do
+            if docker exec "$POSTIZ_CONTAINER" bash -c 'curl -sf -m 10 http://localhost:5000/api/ | grep -q "App is running!"' 2>/dev/null; then
+              echo "Internal /api/ OK (attempt $i)"
+              INTERNAL_OK=true
+              break
+            fi
+            echo "  internal /api/ attempt $i/24"
+            sleep 5
+          done
+          if [ "$INTERNAL_OK" != true ]; then
+            echo "ERROR: /api/ no responde dentro del contenedor tras 120s"
             rollback
             exit 1
           fi
@@ -284,10 +327,12 @@ jobs:
 
           echo "=== Refreshing Traefik routes ==="
           docker restart coolify-proxy || true
-          sleep 5
+          # 15s (antes 5): el proxy recarga rutas y certificados al reiniciar; sondear
+          # antes solo genera falsos negativos.
+          sleep 15
 
           echo "=== Verifying endpoints (with retries) ==="
-          for i in $(seq 1 12); do
+          for i in $(seq 1 20); do
             API_OK=false
             LANDING_OK=false
             FRONTEND_OK=false
@@ -296,11 +341,11 @@ jobs:
             # /api/health lo sintetiza nginx con un 200 fijo, asi que no prueba nada.
             # /api/ sale del prefijo en nginx y llega al RootController de NestJS,
             # que responde "App is running!": valida Traefik -> nginx -> backend.
-            curl -sf --max-time 10 "https://app.miposting.com/api/" 2>/dev/null | grep -q "App is running!" && API_OK=true
+            curl -sf --max-time 15 "https://app.miposting.com/api/" 2>/dev/null | grep -q "App is running!" && API_OK=true
             curl -sf -o /dev/null --max-time 15 "https://miposting.com/" && LANDING_OK=true
-            curl -sf -o /dev/null --max-time 10 "https://app.miposting.com/auth" && FRONTEND_OK=true
+            curl -sf -o /dev/null --max-time 15 "https://app.miposting.com/auth" && FRONTEND_OK=true
             # -k solo aqui: Coolify es infra ajena a la app y no bloquea el deploy.
-            curl -sfk -o /dev/null --max-time 10 "https://coolify.insiterd.com/login" && COOLIFY_OK=true
+            curl -sfk -o /dev/null --max-time 5 "https://coolify.insiterd.com/login" && COOLIFY_OK=true
 
             if [ "$API_OK" = true ] && [ "$LANDING_OK" = true ] && [ "$FRONTEND_OK" = true ]; then
               echo "All core endpoints verified on attempt $i (Coolify status: $COOLIFY_OK)"
@@ -310,7 +355,7 @@ jobs:
             echo "Attempt $i failed (API:$API_OK, Landing:$LANDING_OK, Frontend:$FRONTEND_OK, Coolify:$COOLIFY_OK), retrying in 5s..."
             sleep 5
 
-            if [ "$i" = "12" ]; then
+            if [ "$i" = "20" ]; then
               echo "ERROR: Endpoints failed after $i attempts"
               rollback
               exit 1
