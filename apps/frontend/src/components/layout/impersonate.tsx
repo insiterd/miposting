@@ -112,7 +112,7 @@ const ChargesModal: FC<{ close: () => void }> = ({ close }) => {
   }, []);
 
   return (
-    <div className="flex flex-col gap-[16px] min-w-[500px]">
+    <div className="flex flex-col gap-[16px] sm:min-w-[500px]">
       <div className="max-h-[400px] overflow-y-auto">
         {!charges?.length ? (
           <div className="text-center py-[20px] text-newTextColor/60">
@@ -335,7 +335,7 @@ const AddAnnouncementModal: FC<{ close: () => void }> = ({ close }) => {
   }, [title, description, color]);
 
   return (
-    <div className="flex flex-col gap-[16px] min-w-[500px]">
+    <div className="flex flex-col gap-[16px] sm:min-w-[500px]">
       <Input
         label={t('announcement_title', 'Title')}
         name="title"
@@ -524,7 +524,7 @@ export const Impersonate = () => {
   return (
     <div>
       <div className="bg-forth h-[52px] flex justify-center items-center border-input border rounded-[8px] text-white">
-        <div className="relative flex flex-col w-[600px]">
+        <div className="relative flex flex-col w-full sm:w-[600px] max-w-full">
           <div className="relative z-[1]">
             {user?.impersonate ? (
               <div className="text-center flex justify-center items-center gap-[20px]">

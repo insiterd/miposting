@@ -99,7 +99,7 @@ export const FirstBillingComponent = () => {
       title: 'Grow Fast With miposting (Play the video)',
       children: (
         <iframe
-          className="h-full aspect-video min-w-[800px]"
+          className="h-full w-full aspect-video sm:min-w-[800px]"
           src="https://www.youtube.com/embed/BdsCVvEYgHU?si=vvhaZJ8I5oXXvVJS?autoplay=1"
           title="miposting Tutorial"
           allow="autoplay"
