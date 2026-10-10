@@ -816,3 +816,14 @@ html[dir='rtl'] [dir='ltr'] {
   text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black,
     1px 1px 0 black;
 }
+
+// On small screens the Copilot bubble would sit on top of the post modal's primary action
+@media (max-width: 1023px) {
+  .copilotKitButton {
+    top: 76px !important;
+    bottom: auto !important;
+    inset-inline-end: 12px !important;
+    width: 44px !important;
+    height: 44px !important;
+  }
+}

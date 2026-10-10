@@ -171,11 +171,11 @@ export const PlatformAnalytics = () => {
     );
   }
   return (
-    <>
+    <div className="flex flex-col lg:flex-row w-full gap-[1px]">
       <div
         className={clsx(
-          'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all',
-          collapseMenu === '1' ? 'group sidebar w-[100px]' : 'w-[260px]'
+          'bg-newBgColorInner p-[20px] flex flex-col gap-[15px] transition-all w-full',
+          collapseMenu === '1' ? 'group sidebar lg:w-[100px]' : 'lg:w-[260px]'
         )}
       >
         <div className="flex gap-[12px] flex-col">
@@ -298,6 +298,6 @@ export const PlatformAnalytics = () => {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 };

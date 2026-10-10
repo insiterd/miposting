@@ -124,10 +124,10 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                     <MobileBottomNav />
                     <div className="flex-1 bg-newBgLineColor rounded-[12px] overflow-y-auto overflow-x-hidden lg:overflow-hidden flex flex-col gap-[1px] blurMe pb-[70px] lg:pb-0">
                       <div className="flex bg-newBgColorInner h-[80px] px-[12px] lg:px-[20px] items-center">
-                        <div className="text-[16px] lg:text-[24px] font-[600] flex flex-1">
+                        <div className="text-[16px] lg:text-[24px] font-[600] flex flex-1 min-w-0 truncate">
                           <Title />
                         </div>
-                        <div className="flex gap-[12px] lg:gap-[20px] text-textItemBlur overflow-x-auto flex-nowrap">
+                        <div className="flex shrink-0 items-center gap-[10px] sm:gap-[12px] lg:gap-[20px] text-textItemBlur">
                           <StreakComponent />
                           <div className="w-[1px] h-[20px] bg-blockSeparator" />
                           <OrganizationSelector />
@@ -136,7 +136,9 @@ export const LayoutComponent = ({ children }: { children: ReactNode }) => {
                           </div>
                           <div className="w-[1px] h-[20px] bg-blockSeparator" />
                           <LanguageComponent />
-                          <ChromeExtensionComponent />
+                          <div className="hidden sm:block">
+                            <ChromeExtensionComponent />
+                          </div>
                           <div className="w-[1px] h-[20px] bg-blockSeparator" />
                           <AttachToFeedbackIcon />
                           <NotificationComponent />

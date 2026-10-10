@@ -659,8 +659,8 @@ export const AddProviderComponent: FC<{
           className={clsx(
             isMobile && 'gap-[20px] flex flex-col',
             !isMobile &&
-              'grid grid-cols-5 gap-[10px] justify-items-center justify-center',
-            isMobile ? {} : onboarding ? 'grid-cols-9' : 'grid-cols-5'
+              'grid grid-cols-3 sm:grid-cols-5 gap-[10px] justify-items-center justify-center',
+            isMobile ? {} : onboarding ? 'sm:grid-cols-9' : ''
           )}
         >
           {social
